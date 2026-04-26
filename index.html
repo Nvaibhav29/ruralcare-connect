@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RuralCare Connect — Healthcare Access &amp; Resource System</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg:#f0f4f8;--surface:#fff;--surface2:#f7fafc;--border:#e2e8f0;--border2:#cbd5e0;
+  --primary:#0f766e;--primary-light:#d1fae5;--primary-dark:#065f46;
+  --accent:#f59e0b;--accent-light:#fef3c7;--danger:#dc2626;--danger-light:#fee2e2;
+  --info:#2563eb;--info-light:#dbeafe;--text:#1a202c;--text2:#4a5568;--text3:#718096;
+  --radius:10px;--shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:13px;min-height:100vh;}
+
+/* ── Login Screen ─────────────────────────────────────────────────── */
+#login-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;background:linear-gradient(135deg,#0d4f47 0%,#0f766e 50%,#065f46 100%);}
+.login-brand{text-align:center;margin-bottom:24px;}
+.logo-ring{width:56px;height:56px;background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.3);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;font-size:26px;}
+.login-brand h1{font-size:22px;font-weight:600;color:#fff;letter-spacing:-.5px;}
+.login-brand p{font-size:12px;color:rgba(255,255,255,.65);margin-top:4px;}
+.login-card{background:var(--surface);border-radius:16px;padding:28px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.25);}
+.login-card h2{font-size:13px;font-weight:500;color:var(--text2);margin-bottom:16px;text-align:center;}
+.role-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:18px;}
+.role-btn{padding:14px 8px;border:1.5px solid var(--border);border-radius:10px;background:var(--surface2);cursor:pointer;text-align:center;transition:all .15s;}
+.role-btn:hover,.role-btn.selected{border-color:var(--primary);background:var(--primary-light);}
+.role-btn .ri{font-size:22px;margin-bottom:5px;}
+.role-btn .rn{font-size:11.5px;font-weight:500;color:var(--text);}
+.role-btn .rd{font-size:10px;color:var(--text3);}
+.login-input{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;color:var(--text);background:var(--surface);margin-bottom:8px;outline:none;transition:border-color .15s;}
+.login-input:focus{border-color:var(--primary);}
+.btn-login{width:100%;padding:11px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;transition:background .15s;margin-top:2px;}
+.btn-login:hover{background:var(--primary-dark);}
+.btn-login.secondary{background:none;border:1.5px solid var(--primary);color:var(--primary);}
+.btn-login.secondary:hover{background:var(--primary-light);}
+.demo-note{text-align:center;font-size:10.5px;color:var(--text3);margin-top:10px;line-height:1.7;}
+.register-toggle{text-align:center;margin-top:12px;font-size:12px;color:var(--text3);}
+.register-toggle a{color:var(--primary);font-weight:500;cursor:pointer;text-decoration:none;}
+.register-toggle a:hover{text-decoration:underline;}
+.form-divider{display:flex;align-items:center;gap:8px;margin:10px 0;}
+.form-divider span{flex:1;height:1px;background:var(--border);}
+.form-divider p{font-size:11px;color:var(--text3);white-space:nowrap;}
+#register-panel{display:none;}
+
+/* ── App Screen ───────────────────────────────────────────────────── */
+#app-screen{display:none;min-height:100vh;}
+.topbar{background:var(--primary);color:#fff;padding:0 20px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.15);}
+.topbar-logo{font-size:15px;font-weight:600;letter-spacing:-.3px;display:flex;align-items:center;gap:8px;}
+.role-pill{font-size:10px;padding:2px 9px;background:rgba(255,255,255,.2);border-radius:20px;font-weight:500;}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.topbar-user{font-size:12px;color:rgba(255,255,255,.8);}
+.logout-btn{font-size:11px;color:rgba(255,255,255,.75);background:none;border:1px solid rgba(255,255,255,.3);cursor:pointer;font-family:inherit;padding:4px 10px;border-radius:6px;transition:all .1s;}
+.logout-btn:hover{background:rgba(255,255,255,.15);}
+.nav-tabs{background:var(--surface);border-bottom:1px solid var(--border);display:flex;overflow-x:auto;padding:0 12px;gap:2px;scrollbar-width:none;}
+.nav-tabs::-webkit-scrollbar{display:none;}
+.nav-tab{padding:11px 14px;font-size:12px;font-weight:500;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .15s;background:none;border-top:none;border-left:none;border-right:none;font-family:inherit;}
+.nav-tab:hover{color:var(--text);}
+.nav-tab.active{color:var(--primary);border-bottom-color:var(--primary);}
+.content{padding:20px;max-width:960px;margin:0 auto;}
+.page{display:none;animation:fadeIn .2s ease;}
+.page.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:14px;box-shadow:var(--shadow);}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.card-title{font-size:14px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:7px;}
+.card-subtitle{font-size:11px;color:var(--text3);margin-top:2px;}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;}
+.stat-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px 10px;text-align:center;}
+.stat-val{font-size:26px;font-weight:600;font-family:'DM Mono',monospace;}
+.stat-label{font-size:10.5px;color:var(--text3);margin-top:2px;font-weight:500;}
+.stat-sub{font-size:10px;margin-top:3px;}
+.sc-green .stat-val{color:var(--primary);}
+.sc-amber .stat-val{color:var(--accent);}
+.sc-red .stat-val{color:var(--danger);}
+.progress-bar{height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:6px;}
+.progress-fill{height:100%;border-radius:3px;}
+.tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.tbl th{text-align:left;padding:8px 10px;font-weight:500;color:var(--text3);border-bottom:1px solid var(--border);font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;}
+.tbl td{padding:10px 10px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:var(--surface2);}
+.badge{font-size:10.5px;font-weight:500;padding:2px 8px;border-radius:20px;display:inline-block;white-space:nowrap;}
+.b-green{background:var(--primary-light);color:var(--primary-dark);}
+.b-amber{background:var(--accent-light);color:#92400e;}
+.b-red{background:var(--danger-light);color:var(--danger);}
+.b-blue{background:var(--info-light);color:var(--info);}
+.b-gray{background:#f1f5f9;color:var(--text3);}
+.form-group{margin-bottom:12px;}
+.form-label{font-size:11.5px;font-weight:500;color:var(--text2);margin-bottom:5px;display:block;}
+.form-input,.form-select{width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:7px;font-family:inherit;font-size:12.5px;color:var(--text);background:var(--surface);outline:none;transition:border-color .15s;}
+.form-input:focus,.form-select:focus{border-color:var(--primary);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+.btn{padding:9px 16px;border-radius:7px;font-family:inherit;font-size:12.5px;font-weight:500;cursor:pointer;transition:all .15s;border:none;}
+.btn-sm{padding:5px 11px;font-size:11px;}
+.btn-teal{background:var(--primary);color:#fff;}
+.btn-teal:hover{background:var(--primary-dark);}
+.btn-outline{background:none;border:1.5px solid var(--border);color:var(--text2);}
+.btn-outline:hover{border-color:var(--primary);color:var(--primary);}
+.btn-red{background:var(--danger);color:#fff;}
+.btn-red:hover{background:#b91c1c;}
+.search-bar{display:flex;gap:8px;margin-bottom:14px;align-items:center;}
+.search-input{flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:7px;font-family:inherit;font-size:12.5px;outline:none;background:var(--surface);}
+.search-input:focus{border-color:var(--primary);}
+.last-updated{font-size:10.5px;color:var(--text3);display:flex;align-items:center;gap:5px;padding:4px 10px;background:var(--surface2);border-radius:20px;border:1px solid var(--border);}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;animation:pulse 1.5s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.alert{padding:10px 14px;border-radius:8px;font-size:12px;margin-bottom:12px;display:flex;align-items:flex-start;gap:8px;}
+.al-red{background:var(--danger-light);color:var(--danger);border:1px solid #fca5a5;}
+.al-amber{background:var(--accent-light);color:#92400e;border:1px solid #fcd34d;}
+.al-green{background:var(--primary-light);color:var(--primary-dark);border:1px solid #6ee7b7;}
+.al-blue{background:var(--info-light);color:var(--info);border:1px solid #93c5fd;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.divider{height:1px;background:var(--border);margin:14px 0;}
+.timeline{padding-left:18px;border-left:2px solid var(--border);}
+.tl-item{position:relative;padding:0 0 14px 16px;}
+.tl-item::before{content:'';position:absolute;left:-8px;top:4px;width:12px;height:12px;border-radius:50%;background:var(--primary);border:2px solid var(--surface);}
+.tl-item:last-child{padding-bottom:0;}
+.tl-time{font-size:10.5px;color:var(--text3);margin-bottom:2px;}
+.tl-text{font-size:12px;color:var(--text2);}
+.hosp-card{border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:10px;background:var(--surface);}
+.hosp-card.recommended{border-color:var(--primary);border-width:2px;background:#f0fdf9;}
+.hosp-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.hosp-name{font-size:13.5px;font-weight:600;}
+.hosp-dist{font-size:11px;color:var(--text3);}
+.res-row{display:flex;gap:8px;flex-wrap:wrap;}
+.res-tag{font-size:10.5px;padding:3px 8px;border-radius:5px;background:var(--surface2);border:1px solid var(--border);color:var(--text2);}
+.med-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;}
+.emg-btn{width:100%;padding:18px;background:var(--danger);color:#fff;border:none;border-radius:12px;font-family:inherit;font-size:16px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;animation:emgpulse 2s ease-in-out infinite;}
+@keyframes emgpulse{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.4)}50%{box-shadow:0 0 0 10px rgba(220,38,38,0)}}
+.emg-btn:hover{background:#b91c1c;animation:none;}
+.section-label{font-size:10.5px;font-weight:600;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin:18px 0 10px;}
+#toast{position:fixed;bottom:20px;right:20px;background:var(--text);color:#fff;padding:11px 18px;border-radius:9px;font-size:12.5px;font-weight:500;opacity:0;transition:opacity .3s;z-index:1000;pointer-events:none;max-width:300px;line-height:1.5;}
+#toast.show{opacity:1;}
+
+/* ── Bed Reserve Modal ────────────────────────────────────────────── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:500;padding:20px;}
+.modal-box{background:var(--surface);border-radius:14px;padding:24px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+.modal-title{font-size:15px;font-weight:600;margin-bottom:16px;}
+
+@media(max-width:640px){.stat-grid{grid-template-columns:repeat(2,1fr)}.two-col{grid-template-columns:1fr}.form-row,.form-row-3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<!-- Bed Reservation Modal -->
+<div id="bed-modal" style="display:none" class="modal-overlay" onclick="if(event.target===this)closeBedModal()">
+  <div class="modal-box">
+    <div class="modal-title">🛏️ Reserve a Bed</div>
+    <input type="hidden" id="modal-hid" />
+    <input type="hidden" id="modal-hname" />
+    <div class="form-group">
+      <label class="form-label">Ward preference (optional)</label>
+      <select class="form-select" id="modal-ward">
+        <option value="">No preference</option>
+        <option>General Medicine</option>
+        <option>Surgery</option>
+        <option>Maternity</option>
+        <option>Paediatrics</option>
+        <option>ICU</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Reason / Symptoms</label>
+      <input class="form-input" id="modal-reason" placeholder="e.g. High fever, chest pain..." />
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn btn-teal" style="flex:1" onclick="submitBedReserve()">Submit Request</button>
+      <button class="btn btn-outline" onclick="closeBedModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── LOGIN ────────────────────────────────────────────────────────── -->
+<div id="login-screen">
+  <div class="login-brand">
+    <div class="logo-ring">🏥</div>
+    <h1>RuralCare Connect</h1>
+    <p>Rural Healthcare Access &amp; Resource Management System</p>
+  </div>
+  <div class="login-card">
+    <h2>Select your role to continue</h2>
+    <div class="role-grid">
+      <div class="role-btn" onclick="selectRole('patient')" id="rb-patient">
+        <div class="ri">👤</div><div class="rn">Patient</div><div class="rd">Find care &amp; medicines</div>
+      </div>
+      <div class="role-btn" onclick="selectRole('hospital')" id="rb-hospital">
+        <div class="ri">🏥</div><div class="rn">Hospital Admin</div><div class="rd">Manage resources</div>
+      </div>
+      <div class="role-btn" onclick="selectRole('govt')" id="rb-govt">
+        <div class="ri">🏛️</div><div class="rn">Govt / NHM</div><div class="rd">District oversight</div>
+      </div>
+    </div>
+
+    <!-- Sign-in form -->
+    <div id="login-panel">
+      <input class="login-input" id="login-id" type="text" placeholder="Mobile number / Employee ID" />
+      <input class="login-input" id="login-pw" type="password" placeholder="Password" />
+      <button class="btn-login" onclick="doLogin()">Sign In →</button>
+      <p class="demo-note" id="demo-note">Patient: 9876543210 / patient123 &nbsp;|&nbsp; Hospital: HOSP001 / hospital123 &nbsp;|&nbsp; Govt: GOVT001 / govt123</p>
+      <!-- Register link — only shown for patient role -->
+      <div class="register-toggle" id="register-link" style="display:none">
+        New patient? <a onclick="showRegisterForm()">Create an account →</a>
+      </div>
+    </div>
+
+    <!-- Register form (patient only) -->
+    <div id="register-panel">
+      <div class="form-divider"><span></span><p>New Patient Registration</p><span></span></div>
+      <div class="form-row">
+        <div><input class="login-input" id="reg-name" type="text" placeholder="Full name *" /></div>
+        <div><input class="login-input" id="reg-mobile" type="tel" placeholder="Mobile (10 digits) *" /></div>
+      </div>
+      <input class="login-input" id="reg-pw" type="password" placeholder="Create password (min 6 chars) *" />
+      <div class="form-row">
+        <div><input class="login-input" id="reg-age" type="number" placeholder="Age" /></div>
+        <div>
+          <select class="login-input" id="reg-gender" style="padding:10px 12px">
+            <option value="">Gender</option>
+            <option value="M">Male</option>
+            <option value="F">Female</option>
+            <option value="O">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div>
+          <select class="login-input" id="reg-blood" style="padding:10px 12px">
+            <option value="">Blood Group</option>
+            <option>O+</option><option>O-</option><option>A+</option><option>A-</option>
+            <option>B+</option><option>B-</option><option>AB+</option><option>AB-</option>
+          </select>
+        </div>
+        <div><input class="login-input" id="reg-village" type="text" placeholder="Village / Block" /></div>
+      </div>
+      <button class="btn-login" onclick="doRegister()">Create Account &amp; Sign In →</button>
+      <div class="register-toggle" style="margin-top:12px">
+        Already have an account? <a onclick="showLoginForm()">Sign In</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── APP ──────────────────────────────────────────────────────────── -->
+<div id="app-screen">
+  <div class="topbar">
+    <div class="topbar-logo">🏥 RuralCare <span class="role-pill" id="role-badge">Patient</span></div>
+    <div class="topbar-right">
+      <span class="topbar-user" id="user-display"></span>
+      <button class="logout-btn" onclick="doLogout()">Sign out</button>
+    </div>
+  </div>
+  <div class="nav-tabs" id="nav-tabs"></div>
+  <div class="content" id="main-content"></div>
+</div>
+
+<script>
+// ── Shared state & utilities ──────────────────────────────────────────────────
+let currentRole = null;
+
+const roleNames = { patient:'Patient', hospital:'Hospital Admin', govt:'NHM Officer' };
+
+const tabsForRole = {
+  patient:  [{id:'home',l:'Home',i:'🏠'},{id:'beds',l:'Hospitals',i:'🏥'},{id:'meds',l:'Medicines',i:'💊'},{id:'emg',l:'Emergency',i:'🚑'},{id:'records',l:'My Records',i:'📄'}],
+  hospital: [{id:'dash',l:'Dashboard',i:'📊'},{id:'update',l:'Update Resources',i:'✏️'},{id:'medstock',l:'Medicine Stock',i:'💊'},{id:'reservations',l:'Reservations',i:'📋'},{id:'shortage',l:'Procurement',i:'📦'},{id:'patrecords',l:'Patient Records',i:'🗂️'},{id:'audit',l:'Audit Log',i:'🔍'}],
+  govt:     [{id:'district',l:'District View',i:'🗺️'},{id:'govtshortage',l:'Shortages',i:'⚠️'},{id:'audit',l:'Reports',i:'📈'}]
+};
+
+function selectRole(r) {
+  currentRole = r;
+  document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('rb-' + r).classList.add('selected');
+  document.getElementById('login-id').placeholder = r === 'patient' ? 'Mobile number (10 digits)' : 'Employee ID (e.g. HOSP001)';
+  // Show register link only for patients
+  document.getElementById('register-link').style.display = r === 'patient' ? 'block' : 'none';
+  // Always go back to login view on role switch
+  showLoginForm();
+}
+
+function showRegisterForm() {
+  document.getElementById('login-panel').style.display = 'none';
+  document.getElementById('register-panel').style.display = 'block';
+}
+
+function showLoginForm() {
+  document.getElementById('login-panel').style.display = 'block';
+  document.getElementById('register-panel').style.display = 'none';
+}
+
+function renderNav() {
+  const tabs = tabsForRole[currentRole];
+  document.getElementById('nav-tabs').innerHTML = tabs.map((t,i) =>
+    `<button class="nav-tab${i===0?' active':''}" onclick="renderTab(${i})">${t.i} ${t.l}</button>`
+  ).join('');
+}
+
+function toast(msg, dur=2800) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), dur);
+}
+
+// ── Bed Reservation Modal helpers ────────────────────────────────────────────
+function openBedModal(hid, hname) {
+  document.getElementById('modal-hid').value = hid;
+  document.getElementById('modal-hname').value = hname;
+  document.getElementById('modal-ward').value = '';
+  document.getElementById('modal-reason').value = '';
+  document.getElementById('bed-modal').style.display = 'flex';
+}
+function closeBedModal() {
+  document.getElementById('bed-modal').style.display = 'none';
+}
+
+// Restore session on page load
+window.addEventListener('load', () => {
+  const token = localStorage.getItem('rc_token');
+  const user  = JSON.parse(localStorage.getItem('rc_user') || 'null');
+  if (token && user) {
+    currentRole = user.role;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app-screen').style.display   = 'block';
+    document.getElementById('role-badge').textContent     = roleNames[user.role];
+    document.getElementById('user-display').textContent   = user.name;
+    renderNav(); renderTab(0);
+  }
+});
+</script>
+
+<!-- API-integrated page scripts -->
+<script src="/app.js"></script>
+<script src="/app2.js"></script>
+<script src="/app3.js"></script>
+</body>
+</html>
