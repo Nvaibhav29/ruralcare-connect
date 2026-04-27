@@ -1,102 +1,84 @@
 require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
-const fs   = require('fs');
-const path = require('path');
+const { Pool } = require('pg');
 
-const dbPath = process.env.DB_PATH
-  ? path.resolve(process.env.DB_PATH)
-  : path.join(__dirname, '..', 'ruralcare.db');
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
 
-let _db = null;
-let _inTransaction = false;
+pool.on('connect', () => console.log('✅ PostgreSQL connected (Supabase)'));
+pool.on('error',   (err) => console.error('❌ PostgreSQL pool error:', err.message));
 
-function _save() {
-  if (_inTransaction) return;
-  const data = _db.export();
-  fs.writeFileSync(dbPath, Buffer.from(data));
-}
-
-function _toArray(args) {
-  // Normalise: .get(1,2) → [1,2]  |  .get([1,2]) → [1,2]
-  if (args.length === 1 && Array.isArray(args[0])) return args[0];
-  return args.filter(a => a !== undefined);
-}
-
-function _lastInsertRowid() {
-  try {
-    return _db.exec('SELECT last_insert_rowid()')[0]?.values[0][0] || 0;
-  } catch { return 0; }
-}
-
-function prepare(sql) {
-  return {
-    get(...args) {
-      const p = _toArray(args);
-      const stmt = _db.prepare(sql);
-      if (p.length) stmt.bind(p);
-      const result = stmt.step() ? stmt.getAsObject() : undefined;
-      stmt.free();
-      return result;
-    },
-    all(...args) {
-      const p = _toArray(args);
-      const stmt = _db.prepare(sql);
-      if (p.length) stmt.bind(p);
-      const rows = [];
-      while (stmt.step()) rows.push(stmt.getAsObject());
-      stmt.free();
-      return rows;
-    },
-    run(...args) {
-      const p = _toArray(args);
-      const stmt = _db.prepare(sql);
-      if (p.length) stmt.bind(p);
-      stmt.step();
-      stmt.free();
-      const info = { lastInsertRowid: _lastInsertRowid(), changes: _db.getRowsModified() };
-      _save();
-      return info;
-    }
-  };
+// Convert SQLite-style ? placeholders → PostgreSQL $1, $2, ...
+function convertPlaceholders(sql) {
+  let i = 0;
+  return sql.replace(/\?/g, () => `$${++i}`);
 }
 
 const db = {
-  prepare,
-  pragma(stmt) {
-    try { if (_db) _db.exec(`PRAGMA ${stmt}`); } catch {}
+
+  // Returns single row or undefined
+  async get(sql, params = [], client = null) {
+    const pgSql = convertPlaceholders(sql);
+    const executor = client || pool;
+    const result = await executor.query(pgSql, params);
+    return result.rows[0] || undefined;
   },
-  exec(sql) {
-    _db.exec(sql);
-    _save();
-    return this;
+
+  // Returns all rows as array
+  async all(sql, params = [], client = null) {
+    const pgSql = convertPlaceholders(sql);
+    const executor = client || pool;
+    const result = await executor.query(pgSql, params);
+    return result.rows;
   },
-  transaction(fn) {
-    return (...outerArgs) => {
-      _db.exec('BEGIN');
-      _inTransaction = true;
-      try {
-        const r = fn(...outerArgs);
-        _db.exec('COMMIT');
-        _inTransaction = false;
-        _save();
-        return r;
-      } catch (e) {
-        _db.exec('ROLLBACK');
-        _inTransaction = false;
-        throw e;
-      }
+
+  // Executes INSERT/UPDATE/DELETE — returns { lastInsertRowid, changes }
+  async run(sql, params = [], client = null) {
+    const isInsert = /^\s*INSERT/i.test(sql.trim());
+    let pgSql = convertPlaceholders(sql.trim().replace(/;$/, ''));
+    if (isInsert && !/RETURNING\s+id/i.test(pgSql)) {
+      pgSql = pgSql + ' RETURNING id';
+    }
+    const executor = client || pool;
+    const result = await executor.query(pgSql, params);
+    return {
+      lastInsertRowid: isInsert ? (result.rows[0]?.id || 0) : 0,
+      changes: result.rowCount
     };
   },
-  async init() {
-    const initSqlJs = require('sql.js');
-    const SQL = await initSqlJs();
-    if (fs.existsSync(dbPath)) {
-      _db = new SQL.Database(fs.readFileSync(dbPath));
-      console.log('✅ Database loaded:', dbPath);
-    } else {
-      _db = new SQL.Database();
-      console.log('✅ New database created:', dbPath);
-    }
+
+  // Execute raw SQL (used for schema creation)
+  async exec(sql, client = null) {
+    const executor = client || pool;
+    await executor.query(sql);
     return this;
+  },
+
+  // no-op — no PRAGMA in PostgreSQL
+  pragma() {},
+
+  // Wraps fn in a BEGIN/COMMIT/ROLLBACK transaction.
+  // fn receives a clientApi object with .get/.all/.run/.exec methods
+  async transaction(fn) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const clientApi = {
+        get:  (sql, params = []) => db.get(sql, params, client),
+        all:  (sql, params = []) => db.all(sql, params, client),
+        run:  (sql, params = []) => db.run(sql, params, client),
+        exec: (sql)              => db.exec(sql, client),
+      };
+      const result = await fn(clientApi);
+      await client.query('COMMIT');
+      return result;
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
+    }
   }
 };
 

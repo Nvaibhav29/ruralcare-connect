@@ -3,35 +3,31 @@ const express = require('express');
 const cors    = require('cors');
 const path    = require('path');
 const fs      = require('fs');
-const db      = require('./db/database');
 
 async function start() {
-  // ── 1. Init DB (sql.js loads WASM async once) ────────────────
-  await db.init();
-
-  // ── 2. Init schema ────────────────────────────────────────────
+  // ── 1. Init schema on Supabase ───────────────────────────────
   const { initializeSchema, isSeeded } = require('./db/init');
-  initializeSchema();
+  await initializeSchema();
 
-  // ── 3. Auto-seed on fresh DB ──────────────────────────────────
-  if (!isSeeded()) {
+  // ── 2. Auto-seed on fresh DB ──────────────────────────────────
+  if (!(await isSeeded())) {
     console.log('📦 Fresh database — seeding...');
     const { seedDatabase } = require('./db/seed');
     await seedDatabase();
   }
 
-  // ── 4. Uploads dir ────────────────────────────────────────────
+  // ── 3. Uploads dir ────────────────────────────────────────────
   const uploadsDir = path.join(__dirname, 'uploads');
   if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir);
 
-  // ── 5. Express ────────────────────────────────────────────────
+  // ── 4. Express ────────────────────────────────────────────────
   const app = express();
   app.use(cors());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use('/uploads', express.static(uploadsDir));
 
-  // ── 6. API routes ─────────────────────────────────────────────
+  // ── 5. API routes ─────────────────────────────────────────────
   app.use('/api/auth',      require('./routes/auth'));
   app.use('/api/hospitals', require('./routes/hospitals'));
   app.use('/api/patients',  require('./routes/patients'));
@@ -40,16 +36,16 @@ async function start() {
   app.use('/api/emergency', require('./routes/emergency'));
   app.use('/api/audit',     require('./routes/audit'));
   app.use('/api/district',  require('./routes/district'));
-  app.get('/api/health', (req, res) => res.json({ status:'ok', time: new Date().toISOString() }));
+  app.get('/api/health', (req, res) => res.json({ status:'ok', db:'supabase', time: new Date().toISOString() }));
 
-  // ── 7. Serve frontend ─────────────────────────────────────────
+  // ── 6. Serve frontend ─────────────────────────────────────────
   app.use(express.static(__dirname));
   app.get('*', (req, res) => {
     if (!req.path.startsWith('/api'))
       res.sendFile(path.join(__dirname, 'index.html'));
   });
 
-  // ── 8. Error handler ──────────────────────────────────────────
+  // ── 7. Error handler ──────────────────────────────────────────
   app.use((err, req, res, next) => {
     console.error('❌', err.message);
     res.status(err.status || 500).json({ error: err.message || 'Internal server error' });
@@ -58,6 +54,7 @@ async function start() {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
     console.log(`\n🏥 RuralCare Connect → http://localhost:${PORT}`);
+    console.log('  DB: Supabase (PostgreSQL)');
     console.log('─────────────────────────────────────────');
     console.log('  Patient  → 9876543210 / patient123');
     console.log('  Hospital → HOSP001    / hospital123');

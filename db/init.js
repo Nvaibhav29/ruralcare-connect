@@ -1,17 +1,17 @@
-const db = require('./database');
-const fs = require('fs');
+const db   = require('./database');
+const fs   = require('fs');
 const path = require('path');
 
-function initializeSchema() {
+async function initializeSchema() {
   const sql = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf-8');
-  db.exec(sql);
+  await db.exec(sql);
   console.log('✅ Schema ready');
 }
 
-function isSeeded() {
+async function isSeeded() {
   try {
-    const row = db.prepare('SELECT COUNT(*) AS c FROM hospitals').get();
-    return row && row.c > 0;
+    const row = await db.get('SELECT COUNT(*) AS c FROM hospitals');
+    return row && parseInt(row.c) > 0;
   } catch {
     return false;
   }
