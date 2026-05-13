@@ -19,7 +19,9 @@ async function apiFetch(path, opts = {}) {
   const data = await res.json();
   // Use _clearSession (not doLogout) to avoid recursive loop if the
   // logout API itself returns 401.
-  if (res.status === 401) {
+  // Only treat 401 as "session expired" when the user WAS logged in (had a token).
+  // If there's no token, 401 = wrong credentials on the login form → show server error normally.
+  if (res.status === 401 && token) {
     _clearSession();
     toast('⚠️ Session expired — please sign in again', 3500);
     throw new Error('session_expired'); // internal signal, not shown as dashboard error
