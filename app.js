@@ -19,7 +19,11 @@ async function apiFetch(path, opts = {}) {
   const data = await res.json();
   // Use _clearSession (not doLogout) to avoid recursive loop if the
   // logout API itself returns 401.
-  if (res.status === 401) { _clearSession(); throw new Error('Session expired — please sign in again'); }
+  if (res.status === 401) {
+    _clearSession();
+    toast('⚠️ Session expired — please sign in again', 3500);
+    throw new Error('session_expired'); // internal signal, not shown as dashboard error
+  }
   if (!res.ok) throw new Error(data.error || 'API error');
   return data;
 }
@@ -29,6 +33,11 @@ function _clearSession() {
   localStorage.removeItem('rc_token');
   localStorage.removeItem('rc_user');
   currentRole = null;
+  // Reset login form fields so no stale data appears
+  const loginId = document.getElementById('login-id');
+  const loginPw = document.getElementById('login-pw');
+  if (loginId) loginId.value = '';
+  if (loginPw) loginPw.value = '';
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('app-screen').style.display   = 'none';
   document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected'));
@@ -109,6 +118,8 @@ async function renderTab(i) {
     content.innerHTML = html;
     if (typeof postRender === 'function') postRender(tab.id);
   } catch(e) {
+    // session_expired is handled by _clearSession + toast — don't show error card
+    if (e.message === 'session_expired') return;
     content.innerHTML = `<div class="card"><div class="alert al-red">❌ Failed to load: ${e.message}</div></div>`;
   }
 }
