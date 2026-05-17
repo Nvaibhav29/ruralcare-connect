@@ -408,4 +408,11 @@ window.addEventListener('load', () => {
     document.getElementById('top-user-name').textContent = user.name?.split(' ')[0] || '';
     goTab('home');
   }
+
+  // ── Register Service Worker (PWA) ──────────────────────────────
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      .then(reg => console.log('✅ SW registered, scope:', reg.scope))
+      .catch(err => console.warn('SW registration failed:', err));
+  }
 });

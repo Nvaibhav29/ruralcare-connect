@@ -1,0 +1,44 @@
+{
+  "name": "RuralCare Connect",
+  "short_name": "RuralCare",
+  "description": "Rural Healthcare Access & Resource Management — find hospitals, medicines, and emergency care near you.",
+  "start_url": "/patient",
+  "scope": "/patient",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d4f47",
+  "theme_color": "#0f766e",
+  "lang": "en",
+  "categories": ["health", "medical"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Emergency SOS",
+      "short_name": "SOS",
+      "description": "Send an emergency SOS immediately",
+      "url": "/patient",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Find Hospitals",
+      "short_name": "Hospitals",
+      "description": "Check nearby hospital bed availability",
+      "url": "/patient",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
