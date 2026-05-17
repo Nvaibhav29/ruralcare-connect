@@ -40,6 +40,8 @@ async function start() {
 
   // ── 6. Serve frontend ─────────────────────────────────────────
   app.use(express.static(__dirname));
+  // Mobile patient portal
+  app.get('/patient', (req, res) => res.sendFile(path.join(__dirname, 'patient.html')));
   app.get('*', (req, res) => {
     if (!req.path.startsWith('/api'))
       res.sendFile(path.join(__dirname, 'index.html'));

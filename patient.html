@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<meta name="theme-color" content="#0d4f47"/>
+<title>RuralCare — Patient App</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --teal:#0f766e;--teal-d:#0d4f47;--teal-l:#ccfbf1;
+  --amber:#f59e0b;--amber-l:#fef3c7;
+  --red:#dc2626;--red-l:#fee2e2;
+  --blue:#2563eb;--blue-l:#dbeafe;
+  --bg:#f0faf9;--surface:#fff;--surface2:#f8fffe;
+  --border:#d1fae5;--border2:#a7f3d0;
+  --text:#134e4a;--text2:#1f6b64;--text3:#5eada5;
+  --radius:16px;--shadow:0 2px 12px rgba(15,118,110,.1);
+  --nav-h:68px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);font-size:15px;}
+
+/* ── Auth Screen ── */
+#auth-screen{
+  position:fixed;inset:0;z-index:200;
+  background:linear-gradient(160deg,#0d4f47 0%,#0f766e 55%,#134e4a 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px;overflow-y:auto;
+}
+.auth-brand{text-align:center;margin-bottom:28px;}
+.auth-logo{width:64px;height:64px;background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.3);border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 14px;}
+.auth-brand h1{font-size:24px;font-weight:700;color:#fff;letter-spacing:-.5px;}
+.auth-brand p{font-size:13px;color:rgba(255,255,255,.65);margin-top:4px;}
+.auth-card{background:#fff;border-radius:24px;padding:28px 24px;width:100%;max-width:420px;box-shadow:0 24px 64px rgba(0,0,0,.25);}
+.auth-card h2{font-size:16px;font-weight:600;color:var(--text);margin-bottom:20px;text-align:center;}
+.auth-input{width:100%;padding:14px 16px;border:1.5px solid #e0f2f1;border-radius:12px;font-family:'Outfit',sans-serif;font-size:15px;color:var(--text);background:#f8fffe;outline:none;margin-bottom:10px;transition:border-color .2s;}
+.auth-input:focus{border-color:var(--teal);}
+.auth-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--teal),var(--teal-d));color:#fff;border:none;border-radius:12px;font-family:'Outfit',sans-serif;font-size:16px;font-weight:600;cursor:pointer;margin-top:4px;letter-spacing:.2px;transition:opacity .2s;}
+.auth-btn:active{opacity:.85;}
+.auth-link{text-align:center;margin-top:16px;font-size:13px;color:var(--text3);}
+.auth-link a{color:var(--teal);font-weight:600;cursor:pointer;}
+.auth-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+#reg-panel{display:none;}
+.auth-select{width:100%;padding:13px 16px;border:1.5px solid #e0f2f1;border-radius:12px;font-family:'Outfit',sans-serif;font-size:15px;color:var(--text);background:#f8fffe;outline:none;margin-bottom:10px;-webkit-appearance:none;}
+.auth-demo{text-align:center;font-size:11.5px;color:var(--text3);margin-top:12px;line-height:1.8;padding:10px;background:#f0faf9;border-radius:8px;}
+
+/* ── App Shell ── */
+#app-screen{position:fixed;inset:0;display:none;flex-direction:column;}
+.top-bar{
+  background:linear-gradient(90deg,#0d4f47,#0f766e);
+  color:#fff;padding:0 20px;height:56px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+}
+.top-bar-left{display:flex;align-items:center;gap:10px;}
+.top-logo{font-size:17px;font-weight:700;letter-spacing:-.3px;}
+.top-badge{font-size:10px;padding:2px 9px;background:rgba(255,255,255,.2);border-radius:20px;font-weight:500;}
+.top-right{display:flex;align-items:center;gap:10px;}
+.top-user{font-size:12px;color:rgba(255,255,255,.8);}
+.top-avatar{width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.2);border:2px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:#fff;cursor:pointer;}
+.scroll-area{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--nav-h) + 8px);}
+.page-content{padding:16px;max-width:480px;margin:0 auto;display:none;}
+.page-content.active{display:block;}
+
+/* ── Bottom Nav ── */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;
+  height:var(--nav-h);background:#fff;
+  border-top:1px solid var(--border);
+  display:flex;align-items:center;
+  padding:0 4px;padding-bottom:env(safe-area-inset-bottom);
+  box-shadow:0 -4px 20px rgba(15,118,110,.1);
+  z-index:100;
+}
+.nav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;padding:8px 4px;cursor:pointer;border-radius:12px;transition:all .2s;
+  border:none;background:none;font-family:'Outfit',sans-serif;
+}
+.nav-item .nav-icon{font-size:22px;transition:transform .2s;}
+.nav-item .nav-label{font-size:10px;font-weight:500;color:var(--text3);transition:color .2s;}
+.nav-item.active .nav-label{color:var(--teal);font-weight:600;}
+.nav-item.active .nav-icon{transform:scale(1.15);}
+.nav-item.emg-nav .nav-icon{font-size:28px;}
+.nav-emg-wrap{flex:1;display:flex;align-items:center;justify-content:center;}
+.nav-emg-btn{
+  width:52px;height:52px;border-radius:50%;
+  background:linear-gradient(135deg,#ef4444,#dc2626);
+  border:3px solid #fff;box-shadow:0 4px 16px rgba(220,38,38,.4);
+  display:flex;align-items:center;justify-content:center;font-size:22px;
+  cursor:pointer;transition:transform .15s;margin-bottom:8px;
+  animation:navpulse 2.5s ease-in-out infinite;
+}
+.nav-emg-btn:active{transform:scale(.92);}
+@keyframes navpulse{0%,100%{box-shadow:0 4px 16px rgba(220,38,38,.4)}50%{box-shadow:0 4px 24px rgba(220,38,38,.7)}}
+.nav-emg-label{font-size:10px;font-weight:600;color:var(--red);margin-top:2px;}
+
+/* ── Cards & Components ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:14px;box-shadow:var(--shadow);}
+.card-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px;}
+.card-sub{font-size:12px;color:var(--text3);}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.stat-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.stat-box{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center;}
+.stat-val{font-size:28px;font-weight:700;line-height:1;}
+.stat-lbl{font-size:11px;color:var(--text3);margin-top:4px;font-weight:500;}
+.sv-teal{color:var(--teal);}
+.sv-amber{color:var(--amber);}
+.sv-red{color:var(--red);}
+.sv-blue{color:var(--blue);}
+.badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;display:inline-block;}
+.b-green{background:var(--teal-l);color:#0d4f47;}
+.b-amber{background:var(--amber-l);color:#92400e;}
+.b-red{background:var(--red-l);color:var(--red);}
+.b-blue{background:var(--blue-l);color:var(--blue);}
+.b-gray{background:#f1f5f9;color:#64748b;}
+.btn{padding:12px 20px;border-radius:12px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;cursor:pointer;border:none;transition:all .15s;display:inline-flex;align-items:center;gap:6px;justify-content:center;}
+.btn:active{opacity:.8;transform:scale(.97);}
+.btn-primary{background:linear-gradient(135deg,var(--teal),var(--teal-d));color:#fff;}
+.btn-red{background:linear-gradient(135deg,#ef4444,var(--red));color:#fff;}
+.btn-outline{background:#fff;border:1.5px solid var(--border2);color:var(--text);}
+.btn-sm{padding:8px 14px;font-size:13px;border-radius:10px;}
+.btn-full{width:100%;}
+.alert{padding:12px 14px;border-radius:12px;font-size:13px;margin-bottom:12px;display:flex;align-items:flex-start;gap:8px;}
+.al-amber{background:var(--amber-l);color:#92400e;border:1px solid #fcd34d;}
+.al-green{background:var(--teal-l);color:#0d4f47;border:1px solid var(--border2);}
+.al-red{background:var(--red-l);color:var(--red);border:1px solid #fca5a5;}
+.al-blue{background:var(--blue-l);color:var(--blue);border:1px solid #93c5fd;}
+.divider{height:1px;background:var(--border);margin:14px 0;}
+.live-dot{width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;animation:ldpulse 1.5s ease-in-out infinite;}
+@keyframes ldpulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── Hospital Cards ── */
+.hosp-card{border:1.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px;background:#fff;}
+.hosp-card.top-pick{border-color:var(--teal);background:linear-gradient(135deg,#f0fdf9,#fff);}
+.hosp-recommended{font-size:10px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;}
+.hosp-name{font-size:15px;font-weight:700;color:var(--text);}
+.hosp-loc{font-size:12px;color:var(--text3);margin-top:2px;}
+.res-chips{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;}
+.res-chip{font-size:12px;padding:4px 10px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-weight:500;}
+.hosp-actions{display:flex;gap:8px;margin-top:12px;}
+
+/* ── Medicine Cards ── */
+.search-wrap{position:relative;margin-bottom:14px;}
+.search-input{width:100%;padding:13px 16px 13px 44px;border:1.5px solid var(--border);border-radius:12px;font-family:'Outfit',sans-serif;font-size:15px;background:#fff;outline:none;transition:border-color .2s;}
+.search-input:focus{border-color:var(--teal);}
+.search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:18px;pointer-events:none;}
+.med-card{border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;background:#fff;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.med-name{font-size:14px;font-weight:600;color:var(--text);}
+.med-loc{font-size:11.5px;color:var(--text3);margin-top:2px;}
+.stock-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:6px;width:80px;}
+.stock-fill{height:100%;border-radius:2px;transition:width .3s;}
+
+/* ── Emergency ── */
+.sos-btn{
+  width:100%;padding:26px;background:linear-gradient(135deg,#ef4444,#b91c1c);
+  color:#fff;border:none;border-radius:20px;font-family:'Outfit',sans-serif;
+  font-size:20px;font-weight:700;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;gap:12px;margin-bottom:16px;letter-spacing:.2px;
+  animation:sospulse 2s ease-in-out infinite;
+}
+@keyframes sospulse{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.5)}50%{box-shadow:0 0 0 14px rgba(220,38,38,0)}}
+.sos-btn:active{animation:none;opacity:.9;}
+.emg-contact{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border);}
+.emg-contact:last-child{border-bottom:none;}
+.emg-name{font-size:14px;font-weight:600;color:var(--text);}
+.emg-num{font-size:13px;color:var(--text3);margin-top:2px;}
+.call-btn{padding:10px 18px;background:var(--teal-l);color:var(--teal-d);border:none;border-radius:10px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;cursor:pointer;}
+
+/* ── Records ── */
+.profile-card{background:linear-gradient(135deg,#0d4f47,#0f766e);border-radius:20px;padding:22px;color:#fff;margin-bottom:14px;}
+.profile-name{font-size:20px;font-weight:700;}
+.profile-ref{font-size:12px;opacity:.7;margin-top:2px;}
+.profile-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
+.p-chip{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:8px;padding:6px 12px;font-size:12px;}
+.p-chip span{font-weight:700;}
+.section-title{font-size:13px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin:16px 0 10px;}
+.cond-chip{display:inline-block;margin:4px;padding:6px 14px;background:var(--amber-l);color:#92400e;border-radius:20px;font-size:13px;font-weight:500;}
+.med-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);}
+.med-row:last-child{border-bottom:none;}
+.timeline{border-left:2px solid var(--border);padding-left:16px;margin-left:6px;}
+.tl-item{position:relative;padding:0 0 16px;}
+.tl-dot{position:absolute;left:-22px;top:4px;width:12px;height:12px;border-radius:50%;background:var(--teal);border:2px solid #fff;box-shadow:0 0 0 2px var(--teal-l);}
+.tl-date{font-size:11px;color:var(--text3);margin-bottom:3px;}
+.tl-text{font-size:13.5px;color:var(--text2);}
+
+/* ── Bottom Sheet Modal ── */
+.sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:none;align-items:flex-end;}
+.sheet-overlay.open{display:flex;}
+.sheet-box{background:#fff;border-radius:24px 24px 0 0;padding:24px;width:100%;max-width:480px;margin:0 auto;box-shadow:0 -8px 40px rgba(0,0,0,.2);animation:sheetup .25s ease;}
+@keyframes sheetup{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sheet-handle{width:40px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 20px;}
+.sheet-title{font-size:17px;font-weight:700;margin-bottom:16px;}
+.form-label{font-size:12px;font-weight:600;color:var(--text3);margin-bottom:6px;display:block;text-transform:uppercase;letter-spacing:.04em;}
+.form-input,.form-select{width:100%;padding:13px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:'Outfit',sans-serif;font-size:14px;background:#fff;outline:none;transition:border-color .2s;margin-bottom:12px;}
+.form-input:focus,.form-select:focus{border-color:var(--teal);}
+
+/* ── Skeleton ── */
+.skeleton{background:linear-gradient(90deg,#e0f2f1 25%,#f0fdf9 50%,#e0f2f1 75%);background-size:200% 100%;animation:shimmer 1.3s infinite;border-radius:10px;}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ── Toast ── */
+#toast{
+  position:fixed;bottom:calc(var(--nav-h) + 12px);left:50%;transform:translateX(-50%) translateY(20px);
+  background:rgba(13,79,71,.95);backdrop-filter:blur(8px);color:#fff;
+  padding:12px 22px;border-radius:50px;font-size:13.5px;font-weight:500;
+  opacity:0;transition:all .3s;z-index:400;pointer-events:none;
+  white-space:nowrap;max-width:85vw;overflow:hidden;text-overflow:ellipsis;
+  box-shadow:0 4px 20px rgba(0,0,0,.3);
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* Quick action grid */
+.action-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+.action-card{background:#fff;border:1.5px solid var(--border);border-radius:16px;padding:18px 14px;cursor:pointer;transition:all .2s;text-align:left;}
+.action-card:active{transform:scale(.97);background:var(--surface2);}
+.action-icon{font-size:28px;margin-bottom:8px;}
+.action-title{font-size:13px;font-weight:700;color:var(--text);}
+.action-desc{font-size:11px;color:var(--text3);margin-top:3px;line-height:1.4;}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+
+<!-- Bed Reservation Sheet -->
+<div class="sheet-overlay" id="bed-sheet" onclick="if(event.target===this)closeSheet()">
+  <div class="sheet-box">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">🛏️ Reserve a Bed</div>
+    <input type="hidden" id="sh-hid"/>
+    <label class="form-label">Ward preference</label>
+    <select class="form-select" id="sh-ward">
+      <option value="">No preference</option>
+      <option>General Medicine</option><option>Surgery</option>
+      <option>Maternity</option><option>Paediatrics</option><option>ICU</option>
+    </select>
+    <label class="form-label">Reason / Symptoms</label>
+    <input class="form-input" id="sh-reason" placeholder="e.g. High fever, chest pain..."/>
+    <button class="btn btn-primary btn-full" onclick="submitBed()" style="margin-top:4px">Submit Request</button>
+    <button class="btn btn-outline btn-full" onclick="closeSheet()" style="margin-top:8px">Cancel</button>
+  </div>
+</div>
+
+<!-- Auth Screen -->
+<div id="auth-screen">
+  <div class="auth-brand">
+    <div class="auth-logo">🏥</div>
+    <h1>RuralCare</h1>
+    <p>Your health, at your fingertips</p>
+  </div>
+  <div class="auth-card">
+    <!-- Login Panel -->
+    <div id="login-panel">
+      <h2>Patient Sign In</h2>
+      <input class="auth-input" id="login-mobile" type="tel" placeholder="Mobile number (10 digits)"/>
+      <input class="auth-input" id="login-pw" type="password" placeholder="Password"/>
+      <button class="auth-btn" onclick="doLogin()">Sign In →</button>
+      <div class="auth-link">New patient? <a onclick="showReg()">Create account</a></div>
+      <div class="auth-demo">Demo: <strong>9876543210</strong> / <strong>patient123</strong></div>
+    </div>
+    <!-- Register Panel -->
+    <div id="reg-panel">
+      <h2>Create Patient Account</h2>
+      <div class="auth-row">
+        <input class="auth-input" id="reg-name" placeholder="Full name *" style="margin-bottom:0"/>
+        <input class="auth-input" id="reg-mobile" type="tel" placeholder="Mobile * (10 digits)" style="margin-bottom:0"/>
+      </div>
+      <div style="height:10px"></div>
+      <input class="auth-input" id="reg-pw" type="password" placeholder="Password (min 6 chars) *"/>
+      <div class="auth-row">
+        <input class="auth-input" id="reg-age" type="number" placeholder="Age" style="margin-bottom:0"/>
+        <select class="auth-select" id="reg-gender" style="margin-bottom:0">
+          <option value="">Gender</option>
+          <option value="M">Male</option><option value="F">Female</option><option value="O">Other</option>
+        </select>
+      </div>
+      <div style="height:10px"></div>
+      <div class="auth-row">
+        <select class="auth-select" id="reg-blood" style="margin-bottom:0">
+          <option value="">Blood Group</option>
+          <option>O+</option><option>O-</option><option>A+</option><option>A-</option>
+          <option>B+</option><option>B-</option><option>AB+</option><option>AB-</option>
+        </select>
+        <input class="auth-input" id="reg-village" placeholder="Village/Block" style="margin-bottom:0"/>
+      </div>
+      <div style="height:10px"></div>
+      <button class="auth-btn" onclick="doRegister()">Create Account →</button>
+      <div class="auth-link">Already have an account? <a onclick="showLogin()">Sign In</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- App Screen -->
+<div id="app-screen">
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <span class="top-logo">🏥 RuralCare</span>
+      <span class="top-badge">Patient</span>
+    </div>
+    <div class="top-right">
+      <span class="top-user" id="top-user-name"></span>
+      <div class="top-avatar" id="top-avatar" onclick="doLogout()">?</div>
+    </div>
+  </div>
+
+  <!-- Scrollable Content -->
+  <div class="scroll-area">
+    <div class="page-content active" id="page-home"></div>
+    <div class="page-content" id="page-hospitals"></div>
+    <div class="page-content" id="page-meds"></div>
+    <div class="page-content" id="page-emg"></div>
+    <div class="page-content" id="page-records"></div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" id="nav-home" onclick="goTab('home')">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">Home</span>
+    </button>
+    <button class="nav-item" id="nav-hospitals" onclick="goTab('hospitals')">
+      <span class="nav-icon">🏥</span>
+      <span class="nav-label">Hospitals</span>
+    </button>
+    <div class="nav-emg-wrap" style="flex-direction:column;justify-content:flex-end;padding-bottom:6px">
+      <div class="nav-emg-btn" onclick="goTab('emg')">🚨</div>
+      <div class="nav-emg-label">SOS</div>
+    </div>
+    <button class="nav-item" id="nav-meds" onclick="goTab('meds')">
+      <span class="nav-icon">💊</span>
+      <span class="nav-label">Medicines</span>
+    </button>
+    <button class="nav-item" id="nav-records" onclick="goTab('records')">
+      <span class="nav-icon">📄</span>
+      <span class="nav-label">My Records</span>
+    </button>
+  </nav>
+</div>
+
+<script src="/patient-app.js"></script>
+</body>
+</html>

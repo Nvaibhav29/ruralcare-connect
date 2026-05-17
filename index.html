@@ -142,11 +142,121 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 .modal-title{font-size:15px;font-weight:600;margin-bottom:16px;}
 
 @media(max-width:640px){.stat-grid{grid-template-columns:repeat(2,1fr)}.two-col{grid-template-columns:1fr}.form-row,.form-row-3{grid-template-columns:1fr}}
+
+/* ── Phone Frame (Patient View) ───────────────────────────────── */
+#phone-screen{
+  display:none;min-height:100vh;
+  background:linear-gradient(160deg,#0a2e2a 0%,#0d4f47 40%,#0a3d38 70%,#071f1d 100%);
+  align-items:center;justify-content:center;flex-direction:column;
+  gap:20px;padding:30px 20px;
+}
+.phone-label{
+  font-size:13px;font-weight:500;color:rgba(255,255,255,.5);
+  letter-spacing:.06em;text-transform:uppercase;
+  display:flex;align-items:center;gap:10px;
+}
+.phone-label::before,.phone-label::after{content:'';flex:1;max-width:60px;height:1px;background:rgba(255,255,255,.15);}
+.phone-wrap{
+  position:relative;
+  /* Phone outer shell */
+  background:linear-gradient(170deg,#1c1c1e,#0a0a0a);
+  border-radius:52px;
+  padding:14px;
+  box-shadow:
+    0 0 0 1.5px #3a3a3c,
+    0 40px 100px rgba(0,0,0,.7),
+    inset 0 0 0 1px rgba(255,255,255,.06),
+    0 0 60px rgba(15,118,110,.25);
+  width: 390px;
+}
+.phone-inner{
+  background:#000;
+  border-radius:42px;
+  overflow:hidden;
+  position:relative;
+  height:780px;
+}
+/* Notch / Dynamic Island */
+.phone-notch{
+  position:absolute;top:12px;left:50%;transform:translateX(-50%);
+  width:120px;height:36px;
+  background:#0a0a0a;
+  border-radius:20px;
+  z-index:10;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  box-shadow:0 0 0 1px rgba(255,255,255,.08);
+}
+.notch-camera{width:12px;height:12px;background:#1a1a1a;border-radius:50%;border:2px solid #2a2a2a;box-shadow:inset 0 0 4px rgba(0,0,0,.8);}
+.notch-speaker{width:50px;height:6px;background:#1a1a1a;border-radius:3px;}
+/* Side buttons */
+.phone-btn-vol{
+  position:absolute;left:-3px;top:130px;
+  width:3px;height:34px;background:#2c2c2e;border-radius:2px 0 0 2px;
+  box-shadow:-1px 0 3px rgba(0,0,0,.4);
+}
+.phone-btn-vol+.phone-btn-vol{top:174px;height:60px;}
+.phone-btn-vol+.phone-btn-vol+.phone-btn-vol{top:244px;height:60px;}
+.phone-btn-pwr{
+  position:absolute;right:-3px;top:176px;
+  width:3px;height:76px;background:#2c2c2e;border-radius:0 2px 2px 0;
+  box-shadow:1px 0 3px rgba(0,0,0,.4);
+}
+/* Home indicator */
+.phone-home{
+  position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
+  width:130px;height:5px;background:rgba(255,255,255,.25);
+  border-radius:3px;z-index:10;
+}
+/* The iframe */
+.phone-iframe{
+  width:100%;height:100%;border:none;display:block;
+  border-radius:42px;
+}
+/* Reflection sheen */
+.phone-sheen{
+  position:absolute;inset:0;border-radius:42px;
+  background:linear-gradient(135deg,rgba(255,255,255,.07) 0%,transparent 50%);
+  pointer-events:none;z-index:5;
+}
+.phone-exit-btn{
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);
+  color:rgba(255,255,255,.7);padding:8px 20px;border-radius:20px;
+  font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;
+  transition:all .2s;
+}
+.phone-exit-btn:hover{background:rgba(255,255,255,.2);color:#fff;}
+
+/* On real mobile devices — hide phone frame, just use full-screen patient app */
+@media(max-width:768px){
+  #phone-screen{display:none !important;}
+}
 </style>
 </head>
 <body>
 
 <div id="toast"></div>
+
+<!-- ── PHONE FRAME (Patient on Desktop) ─────────────────────────── -->
+<div id="phone-screen">
+  <div class="phone-label">Patient Mobile Portal</div>
+  <div class="phone-wrap">
+    <!-- Side buttons -->
+    <div class="phone-btn-vol"></div>
+    <div class="phone-btn-vol"></div>
+    <div class="phone-btn-vol"></div>
+    <div class="phone-btn-pwr"></div>
+    <div class="phone-inner">
+      <div class="phone-notch">
+        <div class="notch-speaker"></div>
+        <div class="notch-camera"></div>
+      </div>
+      <div class="phone-sheen"></div>
+      <div class="phone-home"></div>
+      <iframe id="patient-iframe" class="phone-iframe" src="" title="RuralCare Patient Portal"></iframe>
+    </div>
+  </div>
+  <button class="phone-exit-btn" onclick="exitPhoneView()">← Switch Role / Sign Out</button>
+</div>
 
 <!-- Bed Reservation Modal -->
 <div id="bed-modal" style="display:none" class="modal-overlay" onclick="if(event.target===this)closeBedModal()">
@@ -317,17 +427,47 @@ function closeBedModal() {
   document.getElementById('bed-modal').style.display = 'none';
 }
 
+// ── Patient phone-frame helpers ──────────────────────────────────────
+function showPhoneFrame() {
+  // On actual mobile, skip the frame and go straight to /patient
+  if (window.innerWidth <= 768) { window.location.href = '/patient'; return; }
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display   = 'none';
+  document.getElementById('phone-screen').style.display = 'flex';
+  // Load the patient portal into the iframe (same-origin → shares localStorage token)
+  const iframe = document.getElementById('patient-iframe');
+  iframe.src = '/patient';
+}
+
+function exitPhoneView() {
+  // Clear session and go back to login
+  const token = getToken();
+  localStorage.removeItem('rc_token');
+  localStorage.removeItem('rc_user');
+  currentRole = null;
+  document.getElementById('phone-screen').style.display = 'none';
+  document.getElementById('patient-iframe').src = '';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected'));
+  showLoginForm();
+  if (token) fetch(API + '/auth/logout', { method:'POST', headers:{ Authorization:`Bearer ${token}` } }).catch(()=>{});
+}
+
 // Restore session on page load
 window.addEventListener('load', () => {
   const token = localStorage.getItem('rc_token');
   const user  = JSON.parse(localStorage.getItem('rc_user') || 'null');
   if (token && user) {
     currentRole = user.role;
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app-screen').style.display   = 'block';
-    document.getElementById('role-badge').textContent     = roleNames[user.role];
-    document.getElementById('user-display').textContent   = user.name;
-    renderNav(); renderTab(0);
+    if (user.role === 'patient') {
+      showPhoneFrame();
+    } else {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app-screen').style.display   = 'block';
+      document.getElementById('role-badge').textContent     = roleNames[user.role];
+      document.getElementById('user-display').textContent   = user.name;
+      renderNav(); renderTab(0);
+    }
   }
 });
 </script>

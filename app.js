@@ -87,6 +87,11 @@ function _afterAuth(data) {
   setToken(data.token);
   setUser(data.user);
   currentRole = data.user.role;
+  // Patients → mobile phone-frame experience
+  if (data.user.role === 'patient') {
+    showPhoneFrame();
+    return;
+  }
   document.getElementById('login-screen').style.display = 'none';
   const app = document.getElementById('app-screen');
   app.style.display = 'block';
