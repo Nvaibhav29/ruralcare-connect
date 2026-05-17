@@ -3,7 +3,7 @@
   "short_name": "RuralCare",
   "description": "Rural Healthcare Access & Resource Management — find hospitals, medicines, and emergency care near you.",
   "start_url": "/patient",
-  "scope": "/patient",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0d4f47",
@@ -24,7 +24,7 @@
       "purpose": "any maskable"
     }
   ],
-  "screenshots": [],
+  "prefer_related_applications": false,
   "shortcuts": [
     {
       "name": "Emergency SOS",
