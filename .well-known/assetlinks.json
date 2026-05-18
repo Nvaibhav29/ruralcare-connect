@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.ruralcare.connect",
+        "sha256_cert_fingerprints": ["44:8B:E0:0F:1F:CC:7A:C3:63:21:6A:35:C4:91:FE:4E:B0:16:0A:ED:47:7B:66:E4:19:40:13:37:3E:29:29:DC"]
+      }
+    }]

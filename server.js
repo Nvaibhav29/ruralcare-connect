@@ -40,6 +40,11 @@ async function start() {
 
   // ── 6. Serve frontend ─────────────────────────────────────────
   app.use(express.static(__dirname));
+  // Digital Asset Links — makes TWA APK hide the browser address bar
+  app.get('/.well-known/assetlinks.json', (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.sendFile(path.join(__dirname, '.well-known', 'assetlinks.json'));
+  });
   // Mobile patient portal
   app.get('/patient', (req, res) => res.sendFile(path.join(__dirname, 'patient.html')));
   app.get('*', (req, res) => {
