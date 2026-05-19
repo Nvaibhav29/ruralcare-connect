@@ -42,23 +42,19 @@ async function start() {
   app.post('/api/symptom-check', async (req, res) => {
     try {
       const { messages, system } = req.body;
-      const contents = messages.map(m => ({
+      const contents = messages.map((m, i) => ({
         role: m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: m.content }]
+        parts: [{ text: i === 0 ? `${system}\n\nPatient: ${m.content}` : m.content }]
       }));
       const apiKey = process.env.GEMINI_API_KEY;
       if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY not set' });
 
       const r = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: system }] },
-            contents,
-            generationConfig: { maxOutputTokens: 600 }
-          })
+          body: JSON.stringify({ contents, generationConfig: { maxOutputTokens: 600 } })
         }
       );
       const data = await r.json();
