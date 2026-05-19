@@ -50,7 +50,7 @@ async function start() {
       if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY not set' });
 
       const r = await fetch(
-        `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
