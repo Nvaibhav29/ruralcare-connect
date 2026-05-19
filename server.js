@@ -38,6 +38,17 @@ async function start() {
   app.use('/api/district',  require('./routes/district'));
   app.get('/api/health', (req, res) => res.json({ status:'ok', db:'supabase', time: new Date().toISOString() }));
 
+  app.get('/api/test-gemini', async (req, res) => {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey || apiKey === 'your_gemini_api_key_here') return res.json({ error: 'Key not set' });
+    try {
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+      const data = await r.json();
+      const models = data.models?.map(m => m.name) || data;
+      res.json({ keyPrefix: apiKey.slice(0,8)+'...', models });
+    } catch(e) { res.json({ error: e.message }); }
+  });
+
   // ── Symptom Checker (Gemini Flash — free tier) ────────────────
   app.post('/api/symptom-check', async (req, res) => {
     try {
