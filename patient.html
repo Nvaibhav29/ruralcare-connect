@@ -469,7 +469,8 @@ async function scSend(){
   try{
     const r=await fetch('/api/symptom-check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:scHist,system:SC_PROMPT})});
     const data=await r.json();
-    const raw=data.text||'Sorry, I could not process that.';
+    const raw=data.text||'';
+    if(!raw){scHideTyping();scAddMsg('bot','⚠️ No response from AI. Error: '+(data.error||'unknown'),null);scBusy=false;document.getElementById('sc-send').disabled=false;return;}
     const lv=scDetect(raw);const clean=scClean(raw);
     scHist.push({role:'assistant',content:raw});
     scHideTyping();scAddMsg('bot',clean,lv);

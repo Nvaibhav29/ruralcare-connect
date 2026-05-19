@@ -42,13 +42,15 @@ async function start() {
   app.post('/api/symptom-check', async (req, res) => {
     try {
       const { messages, system } = req.body;
-      // Build conversation for Gemini
       const contents = messages.map(m => ({
         role: m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: m.content }]
       }));
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY not set' });
+
       const r = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -60,9 +62,10 @@ async function start() {
         }
       );
       const data = await r.json();
+      if (data.error) { console.error('Gemini error:', data.error); return res.status(500).json({ error: data.error.message }); }
       const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
       res.json({ text });
-    } catch(e) { res.status(500).json({ error: e.message }); }
+    } catch(e) { console.error('symptom-check error:', e.message); res.status(500).json({ error: e.message }); }
   });
 
   // ── 6. Serve frontend ─────────────────────────────────────────
