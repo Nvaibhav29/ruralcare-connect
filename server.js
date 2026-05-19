@@ -38,6 +38,33 @@ async function start() {
   app.use('/api/district',  require('./routes/district'));
   app.get('/api/health', (req, res) => res.json({ status:'ok', db:'supabase', time: new Date().toISOString() }));
 
+  // ── Symptom Checker (Gemini Flash — free tier) ────────────────
+  app.post('/api/symptom-check', async (req, res) => {
+    try {
+      const { messages, system } = req.body;
+      // Build conversation for Gemini
+      const contents = messages.map(m => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }]
+      }));
+      const r = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: system }] },
+            contents,
+            generationConfig: { maxOutputTokens: 600 }
+          })
+        }
+      );
+      const data = await r.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      res.json({ text });
+    } catch(e) { res.status(500).json({ error: e.message }); }
+  });
+
   // ── 6. Serve frontend ─────────────────────────────────────────
   app.use(express.static(__dirname));
   // Digital Asset Links — makes TWA APK hide the browser address bar

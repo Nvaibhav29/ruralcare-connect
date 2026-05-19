@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RuralCare Connect — IDT Presentation</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--teal:#0f766e;--teal2:#0d9488;--dark:#061a18;--card:#0d2e2a;--accent:#2dd4bf;--gold:#f59e0b;--red:#ef4444;--text:#e2f8f5}
+body{font-family:'Outfit',sans-serif;background:var(--dark);color:var(--text);overflow:hidden;height:100vh}
+.deck{width:100%;height:100vh;position:relative}
+.slide{position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;align-items:center;padding:60px 80px;opacity:0;transition:opacity .5s ease}
+.slide.active{display:flex;opacity:1}
+/* bg patterns */
+.slide::before{content:'';position:absolute;inset:0;opacity:.05;background:radial-gradient(circle at 20% 50%,var(--accent) 0%,transparent 50%),radial-gradient(circle at 80% 20%,var(--teal2) 0%,transparent 40%)}
+/* Nav */
+#nav{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);display:flex;gap:12px;align-items:center;z-index:100;background:rgba(13,46,42,.8);padding:12px 24px;border-radius:100px;border:1px solid rgba(45,212,191,.2);backdrop-filter:blur(12px)}
+#nav button{background:none;border:none;color:var(--accent);font-size:22px;cursor:pointer;padding:4px 8px;transition:.2s}
+#nav button:hover{color:#fff}
+#counter{color:var(--accent);font-size:14px;font-weight:600;min-width:60px;text-align:center}
+#progress{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--gold));transition:width .4s ease;z-index:200}
+/* slide 1 - title */
+.s-title{background:linear-gradient(135deg,#061a18 0%,#0d2e2a 50%,#061a18 100%)}
+.s-title .badge{background:linear-gradient(135deg,var(--teal),var(--accent));padding:8px 24px;border-radius:100px;font-size:13px;font-weight:600;letter-spacing:2px;text-transform:uppercase;margin-bottom:28px}
+.s-title h1{font-size:72px;font-weight:900;line-height:1.1;text-align:center;background:linear-gradient(135deg,#fff 0%,var(--accent) 60%,var(--gold) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:16px}
+.s-title p{font-size:20px;color:#94d9d4;margin-bottom:40px;text-align:center}
+.s-title .meta{display:flex;gap:32px;font-size:14px;color:#6fbfba}
+.s-title .meta span{background:var(--card);padding:8px 20px;border-radius:8px;border:1px solid rgba(45,212,191,.2)}
+/* headings */
+.slide-title{font-size:42px;font-weight:800;margin-bottom:32px;text-align:center;position:relative}
+.slide-title span{background:linear-gradient(135deg,var(--accent),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.slide-title::after{content:'';display:block;width:60px;height:4px;background:linear-gradient(90deg,var(--accent),var(--gold));border-radius:2px;margin:12px auto 0}
+/* grid cards */
+.grid{display:grid;gap:20px;width:100%;max-width:1100px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:1fr 1fr 1fr}
+.g4{grid-template-columns:1fr 1fr 1fr 1fr}
+.card{background:var(--card);border:1px solid rgba(45,212,191,.15);border-radius:16px;padding:24px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--teal2))}
+.card.gold::before{background:linear-gradient(90deg,var(--gold),#f97316)}
+.card.red::before{background:linear-gradient(90deg,var(--red),#f97316)}
+.card h3{font-size:16px;font-weight:700;margin-bottom:10px;color:var(--accent)}
+.card.gold h3{color:var(--gold)}
+.card.red h3{color:var(--red)}
+.card p,.card li{font-size:14px;color:#94d9d4;line-height:1.6}
+.card ul{list-style:none;padding:0}
+.card li::before{content:'→ ';color:var(--accent)}
+.card.red li::before{color:var(--red)}
+.card .icon{font-size:32px;margin-bottom:12px}
+/* stat */
+.stat{text-align:center}
+.stat .num{font-size:48px;font-weight:900;background:linear-gradient(135deg,var(--accent),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat .lbl{font-size:13px;color:#6fbfba;margin-top:4px}
+/* table */
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{background:rgba(15,118,110,.5);color:var(--accent);padding:10px 16px;text-align:left;font-weight:600}
+.tbl td{padding:10px 16px;border-bottom:1px solid rgba(45,212,191,.08);color:#c4eae7}
+.tbl tr:hover td{background:rgba(45,212,191,.05)}
+/* pill */
+.pill{display:inline-block;padding:4px 14px;border-radius:100px;font-size:12px;font-weight:600;margin:3px}
+.pill-teal{background:rgba(45,212,191,.15);color:var(--accent);border:1px solid rgba(45,212,191,.3)}
+.pill-gold{background:rgba(245,158,11,.15);color:var(--gold);border:1px solid rgba(245,158,11,.3)}
+.pill-red{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3)}
+/* flow */
+.flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+.flow-box{background:var(--card);border:1px solid rgba(45,212,191,.25);border-radius:10px;padding:12px 18px;font-size:13px;font-weight:600;color:var(--accent);text-align:center}
+.flow-arrow{color:var(--accent);font-size:20px}
+/* section label */
+.sec-label{font-size:11px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);margin-bottom:8px;font-weight:600}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<div class="deck" id="deck">
+
+<!-- SLIDE 1: TITLE -->
+<div class="slide s-title active" id="s1">
+  <div class="badge">IDT Project Presentation · VVCE 2026</div>
+  <h1>RuralCare Connect</h1>
+  <p>Bridging the Healthcare Gap Between Rural India and Modern Medicine</p>
+  <div class="meta">
+    <span>🏥 Hospital Resource Management</span>
+    <span>📱 Mobile-First Patient Portal</span>
+    <span>🏛️ Government Oversight Dashboard</span>
+  </div>
+</div>
+
+<!-- SLIDE 2: PROBLEM STATEMENT -->
+<div class="slide" id="s2">
+  <p class="sec-label">The Challenge</p>
+  <div class="slide-title"><span>Problem Statement</span></div>
+  <div class="grid g2" style="max-width:1000px">
+    <div class="card red">
+      <div class="icon">🚨</div>
+      <h3>Critical Rural Healthcare Gaps</h3>
+      <ul>
+        <li>Severe shortage of medicines &amp; oxygen cylinders</li>
+        <li>No real-time hospital bed availability data</li>
+        <li>Lack of trained medical staff in rural areas</li>
+        <li>Poor infrastructure &amp; road connectivity</li>
+        <li>Resources centralized in cities only</li>
+      </ul>
+    </div>
+    <div class="card red">
+      <div class="icon">💔</div>
+      <h3>Consequences</h3>
+      <ul>
+        <li>Delayed treatment = higher mortality rates</li>
+        <li>Patients travel 50–100 km for basic care</li>
+        <li>No emergency routing system exists</li>
+        <li>Zero transparency in resource allocation</li>
+        <li>Government unable to track shortages</li>
+      </ul>
+    </div>
+  </div>
+  <div class="grid g4" style="max-width:1000px;margin-top:20px">
+    <div class="card stat"><div class="num">70%</div><div class="lbl">India's population is rural</div></div>
+    <div class="card stat"><div class="num">30%</div><div class="lbl">Doctors serve rural areas</div></div>
+    <div class="card stat"><div class="num">50km+</div><div class="lbl">Avg distance to hospital</div></div>
+    <div class="card stat"><div class="num">40%</div><div class="lbl">Deaths due to delayed care</div></div>
+  </div>
+</div>
+
+<!-- SLIDE 3: EXISTING SOLUTIONS -->
+<div class="slide" id="s3">
+  <p class="sec-label">Market Landscape</p>
+  <div class="slide-title"><span>Existing Solutions</span></div>
+  <div class="grid g3" style="max-width:1050px">
+    <div class="card">
+      <div class="icon">🏥</div>
+      <h3>eHospital (NIC / MoHFW)</h3>
+      <ul>
+        <li>Govt hospital management system</li>
+        <li>Complex, non-mobile-friendly UI</li>
+        <li>No real-time resource tracking</li>
+        <li>Not accessible to patients directly</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="icon">📋</div>
+      <h3>HMIS / RCH Portal</h3>
+      <ul>
+        <li>Health Management Info System</li>
+        <li>Data-entry focused, not action-focused</li>
+        <li>No emergency SOS or routing</li>
+        <li>Designed for statisticians, not patients</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="icon">📱</div>
+      <h3>Aarogya Setu / ABHA</h3>
+      <ul>
+        <li>Digital health identity for citizens</li>
+        <li>No hospital bed/medicine tracking</li>
+        <li>No offline support for rural areas</li>
+        <li>Requires internet + smartphone literacy</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card" style="max-width:1050px;margin-top:20px">
+    <h3>⚠️ The Gap None of Them Fill</h3>
+    <p style="margin-top:8px">No existing solution combines <strong style="color:var(--accent)">real-time resource tracking + patient self-service + emergency routing + government audit + mobile-first PWA</strong> in one unified platform for rural India.</p>
+  </div>
+</div>
+
+<!-- SLIDE 4: ROOT CAUSE ANALYSIS -->
+<div class="slide" id="s4rca">
+  <p class="sec-label">Why Does This Happen?</p>
+  <div class="slide-title"><span>Root Cause Analysis</span></div>
+  <div class="grid g3" style="max-width:1050px">
+    <div class="card red">
+      <div class="icon">🏗️</div>
+      <h3>Infrastructure Failure</h3>
+      <ul>
+        <li>No digitized inventory in PHCs &amp; CHCs</li>
+        <li>Paper-based stock registers — error-prone</li>
+        <li>No centralized visibility for district officers</li>
+        <li>Hospitals operate in information silos</li>
+      </ul>
+    </div>
+    <div class="card red">
+      <div class="icon">👨‍⚕️</div>
+      <h3>Human Resource Gaps</h3>
+      <ul>
+        <li>1 doctor per 11,082 rural people (WHO)</li>
+        <li>High attrition — doctors prefer urban posts</li>
+        <li>No triage system for emergencies</li>
+        <li>ASHA workers lack digital tools</li>
+      </ul>
+    </div>
+    <div class="card red">
+      <div class="icon">💰</div>
+      <h3>Supply Chain Breakdown</h3>
+      <ul>
+        <li>Procurement is manual, slow &amp; opaque</li>
+        <li>No real-time shortage alerts to government</li>
+        <li>Vendor lists not maintained or verified</li>
+        <li>Medicines expire due to poor tracking</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card" style="max-width:1050px;margin-top:20px;border-color:rgba(239,68,68,.3)">
+    <h3 style="color:var(--red)">🎯 Root Cause Summary</h3>
+    <p style="margin-top:6px">The core problem is <strong style="color:#fff">lack of real-time digital communication</strong> between patients, hospitals, and government — leading to resource misallocation, delayed treatment, and zero accountability in rural healthcare delivery.</p>
+  </div>
+</div>
+
+<!-- SLIDE 5: PROPOSED SOLUTION -->
+<div class="slide" id="s4">
+  <p class="sec-label">Our Innovation</p>
+  <div class="slide-title"><span>Proposed Solution</span></div>
+  <div class="grid g3" style="max-width:1050px">
+    <div class="card">
+      <div class="icon">👤</div>
+      <h3>Patient Portal (Mobile PWA)</h3>
+      <ul>
+        <li>View live hospital beds, ICU, O₂, doctors</li>
+        <li>Reserve beds &amp; medicines remotely</li>
+        <li>One-tap SOS emergency dispatch</li>
+        <li>Personal health records on mobile</li>
+        <li>Works on low-end Android phones</li>
+      </ul>
+    </div>
+    <div class="card gold">
+      <div class="icon">🏥</div>
+      <h3>Hospital Admin Dashboard</h3>
+      <ul>
+        <li>Update live resource counts in real-time</li>
+        <li>Approve bed &amp; medicine reservations</li>
+        <li>Raise shortage/procurement requests</li>
+        <li>Manage patient records &amp; visits</li>
+        <li>Set custom alert thresholds</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="icon">🏛️</div>
+      <h3>Government Officer Portal</h3>
+      <ul>
+        <li>District-level resource overview</li>
+        <li>Approve shortage requests &amp; dispatch</li>
+        <li>Full immutable audit log</li>
+        <li>Export reports as CSV</li>
+        <li>Monitor all hospitals simultaneously</li>
+      </ul>
+    </div>
+  </div>
+  <div style="margin-top:20px;text-align:center">
+    <span class="pill pill-teal">PWA + Android APK</span>
+    <span class="pill pill-teal">3-Role Access Control</span>
+    <span class="pill pill-gold">Live Resource Tracking</span>
+    <span class="pill pill-gold">Emergency SOS</span>
+    <span class="pill pill-teal">Cloud Database</span>
+    <span class="pill pill-teal">Audit Logs</span>
+    <span class="pill pill-gold">Procurement Management</span>
+  </div>
+</div>
+
+<!-- SLIDE 5: SYSTEM ARCHITECTURE -->
+<div class="slide" id="s5">
+  <p class="sec-label">Technical Design</p>
+  <div class="slide-title"><span>System Architecture</span></div>
+  <div class="flow" style="margin-bottom:24px">
+    <div class="flow-box">📱 Patient<br><small>PWA / Android APK</small></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">🌐 Railway<br><small>Express.js Server</small></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">🗄️ Supabase<br><small>PostgreSQL Cloud DB</small></div>
+    <div class="flow-arrow">←</div>
+    <div class="flow-box">🏥 Hospital Admin<br><small>Web Dashboard</small></div>
+  </div>
+  <div class="flow" style="margin-bottom:24px">
+    <div class="flow-box">🏛️ Govt Officer<br><small>Audit Dashboard</small></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">🔐 JWT Auth<br><small>Role-Based Guard</small></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">📡 REST API<br><small>35+ Endpoints</small></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">📊 15 Tables<br><small>Full Data Model</small></div>
+  </div>
+  <div class="grid g4" style="max-width:1000px">
+    <div class="card stat"><div class="num">35+</div><div class="lbl">API Endpoints</div></div>
+    <div class="card stat"><div class="num">15</div><div class="lbl">Database Tables</div></div>
+    <div class="card stat"><div class="num">3</div><div class="lbl">User Roles</div></div>
+    <div class="card stat"><div class="num">500+</div><div class="lbl">Concurrent Users</div></div>
+  </div>
+</div>
+
+<!-- SLIDE 6: KEY FEATURES -->
+<div class="slide" id="s6">
+  <p class="sec-label">Core Capabilities</p>
+  <div class="slide-title"><span>Key Features</span></div>
+  <table class="tbl" style="max-width:1000px">
+    <thead><tr><th>Module</th><th>Feature</th><th>User Role</th></tr></thead>
+    <tbody>
+      <tr><td>🏥 Hospital Resources</td><td>Live beds / ICU / O₂ / doctors count</td><td><span class="pill pill-teal">All</span></td></tr>
+      <tr><td>🛏️ Bed Reservations</td><td>Patient requests → Admin approves</td><td><span class="pill pill-gold">Patient + Admin</span></td></tr>
+      <tr><td>💊 Medicine Inventory</td><td>Stock tracking, price compare, reserve</td><td><span class="pill pill-teal">All</span></td></tr>
+      <tr><td>🚨 Emergency SOS</td><td>One-tap dispatch + find nearest hospital</td><td><span class="pill pill-gold">Patient</span></td></tr>
+      <tr><td>📋 Procurement</td><td>Shortage requests to verified vendors</td><td><span class="pill pill-teal">Admin + Govt</span></td></tr>
+      <tr><td>📊 Audit Log</td><td>Immutable action log + CSV export</td><td><span class="pill pill-gold">Admin + Govt</span></td></tr>
+      <tr><td>🏛️ District Overview</td><td>Bulk dispatch across hospitals</td><td><span class="pill pill-teal">Govt</span></td></tr>
+      <tr><td>📱 Mobile PWA</td><td>Android APK via TWA, offline caching</td><td><span class="pill pill-gold">Patient</span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- SLIDE 7: EMPATHY MAP -->
+<div class="slide" id="s_em">
+  <p class="sec-label">Understanding the User</p>
+  <div class="slide-title"><span>Empathy Map</span></div>
+  <div class="grid g2" style="max-width:1020px">
+    <div class="card gold">
+      <div class="icon">👁️</div>
+      <h3>SEES</h3>
+      <ul>
+        <li>Long queues at the only nearby PHC</li>
+        <li>"No beds available" boards at hospitals</li>
+        <li>Villagers travelling 60km for medicines</li>
+        <li>ASHA workers with paper forms, no phones</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="icon">👂</div>
+      <h3>HEARS</h3>
+      <ul>
+        <li>"The hospital has no oxygen right now"</li>
+        <li>"You'll have to go to the city hospital"</li>
+        <li>Rumours about medicine shortages spreading</li>
+        <li>News about patients dying due to delayed care</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="icon">💭</div>
+      <h3>THINKS &amp; FEELS</h3>
+      <ul>
+        <li>Fear — "Will I get treatment in time?"</li>
+        <li>Helplessness — no way to check availability</li>
+        <li>Distrust of the healthcare system</li>
+        <li>Anxiety about cost of travelling to city</li>
+      </ul>
+    </div>
+    <div class="card gold">
+      <div class="icon">🗣️</div>
+      <h3>SAYS &amp; DOES</h3>
+      <ul>
+        <li>Delays treatment hoping it improves</li>
+        <li>Calls relatives in city to arrange medicines</li>
+        <li>Uses local unqualified practitioners</li>
+        <li>Wishes for an app to check hospitals</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card" style="max-width:1020px;margin-top:16px">
+    <h3>💡 Key Insight</h3>
+    <p style="margin-top:6px">Rural patients <strong style="color:#fff">don't need a complex system</strong> — they need one simple app that answers: <em style="color:var(--accent)">"Which hospital near me has a bed and medicine available right now?"</em></p>
+  </div>
+</div>
+
+<!-- SLIDE 8: TECH STACK -->
+<div class="slide" id="s7">
+  <p class="sec-label">Under the Hood</p>
+  <div class="slide-title"><span>Technology Stack</span></div>
+  <div class="grid g3" style="max-width:1050px">
+    <div class="card">
+      <h3>🖥️ Backend</h3>
+      <ul>
+        <li><strong style="color:#fff">Node.js</strong> — JavaScript runtime</li>
+        <li><strong style="color:#fff">Express.js</strong> — REST API framework</li>
+        <li><strong style="color:#fff">JWT + bcryptjs</strong> — Auth &amp; hashing</li>
+        <li><strong style="color:#fff">multer</strong> — Bill file uploads</li>
+      </ul>
+    </div>
+    <div class="card gold">
+      <h3>🗄️ Database &amp; Cloud</h3>
+      <ul>
+        <li><strong style="color:#fff">PostgreSQL</strong> — Relational DB</li>
+        <li><strong style="color:#fff">Supabase</strong> — Managed cloud DB</li>
+        <li><strong style="color:#fff">Railway</strong> — Auto-deploy hosting</li>
+        <li><strong style="color:#fff">GitHub</strong> — CI/CD pipeline</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>📱 Frontend &amp; Mobile</h3>
+      <ul>
+        <li><strong style="color:#fff">Vanilla HTML/CSS/JS</strong> — Zero-dep UI</li>
+        <li><strong style="color:#fff">PWA</strong> — Service worker + manifest</li>
+        <li><strong style="color:#fff">TWA</strong> — Native Android APK</li>
+        <li><strong style="color:#fff">PWABuilder</strong> — APK generation</li>
+      </ul>
+    </div>
+  </div>
+  <div class="flow" style="margin-top:20px">
+    <span class="pill pill-teal">Node.js</span>
+    <span class="pill pill-teal">Express</span>
+    <span class="pill pill-gold">PostgreSQL</span>
+    <span class="pill pill-gold">Supabase</span>
+    <span class="pill pill-teal">Railway</span>
+    <span class="pill pill-teal">PWA</span>
+    <span class="pill pill-gold">TWA / APK</span>
+    <span class="pill pill-teal">JWT</span>
+    <span class="pill pill-gold">GitHub CI/CD</span>
+  </div>
+</div>
+
+<!-- SLIDE 8: PROTOTYPE -->
+<div class="slide" id="s8">
+  <p class="sec-label">What We Built</p>
+  <div class="slide-title"><span>Prototype Overview</span></div>
+  <div class="grid g2" style="max-width:1000px">
+    <div class="card">
+      <h3>📱 Mobile Patient App (5 Tabs)</h3>
+      <ul>
+        <li>🏠 <strong style="color:#fff">Home</strong> — Live stats, quick actions</li>
+        <li>🏥 <strong style="color:#fff">Hospitals</strong> — Beds/ICU/O₂, call &amp; reserve</li>
+        <li>💊 <strong style="color:#fff">Medicines</strong> — Search, stock bars, reserve</li>
+        <li>🚨 <strong style="color:#fff">Emergency</strong> — SOS button, 108/104 dial</li>
+        <li>📄 <strong style="color:#fff">My Records</strong> — Profile, conditions, visits</li>
+      </ul>
+    </div>
+    <div class="card gold">
+      <h3>🌐 Live Deployment</h3>
+      <ul>
+        <li>Hosted on Railway (auto-deploy from GitHub)</li>
+        <li>Supabase PostgreSQL — persistent cloud DB</li>
+        <li>Signed Android APK — sideloadable</li>
+        <li>Digital Asset Links — no address bar in app</li>
+        <li>Demo: <strong style="color:#fff">ruralcare-connect-production.up.railway.app</strong></li>
+      </ul>
+    </div>
+  </div>
+  <div class="grid g3" style="max-width:1000px;margin-top:20px">
+    <div class="card">
+      <h3>👤 Demo: Patient</h3>
+      <p>ID: <strong style="color:#fff">9876543210</strong><br>Pass: <strong style="color:#fff">patient123</strong></p>
+    </div>
+    <div class="card gold">
+      <h3>🏥 Demo: Hospital</h3>
+      <p>ID: <strong style="color:#fff">HOSP001</strong><br>Pass: <strong style="color:#fff">hospital123</strong></p>
+    </div>
+    <div class="card">
+      <h3>🏛️ Demo: Govt</h3>
+      <p>ID: <strong style="color:#fff">GOVT001</strong><br>Pass: <strong style="color:#fff">govt123</strong></p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 9: STRATEGIES TO TEST -->
+<div class="slide" id="s9">
+  <p class="sec-label">Future Roadmap</p>
+  <div class="slide-title"><span>Strategies to Test</span></div>
+  <div class="grid g2" style="max-width:1000px">
+    <div class="card gold">
+      <div class="icon">🤖</div>
+      <h3>AI Chatbot — Symptom Analysis</h3>
+      <p>Integrate a Gemini/GPT-powered chatbot in the patient app. Patient describes symptoms → AI suggests urgency level, nearest suitable hospital, and whether to call 108.</p>
+    </div>
+    <div class="card">
+      <div class="icon">🗺️</div>
+      <h3>Google Maps Hospital Locator</h3>
+      <p>Replace text-based locations with Google Maps API. Show real-time hospital pins, distance, estimated travel time, and route to the nearest hospital with available beds.</p>
+    </div>
+    <div class="card">
+      <div class="icon">⚡</div>
+      <h3>Real-Time Updates (WebSockets)</h3>
+      <p>Replace manual refresh with Socket.io WebSockets. Bed counts, medicine stock, and emergency alerts push instantly to all connected users without page reload.</p>
+    </div>
+    <div class="card gold">
+      <div class="icon">📦</div>
+      <h3>Production-Level Deployment</h3>
+      <p>Upgrade to dedicated Railway server, add NGINX reverse proxy, SSL certificates, Docker containerization, automated DB backups, and Sentry error monitoring.</p>
+    </div>
+  </div>
+  <div class="card" style="max-width:1000px;margin-top:20px">
+    <h3>📱 Convert to Full Mobile App</h3>
+    <p>Migrate from TWA to React Native or Flutter for a truly native cross-platform app (Android + iOS). Enables push notifications, offline-first sync, and Play Store / App Store distribution.</p>
+  </div>
+</div>
+
+<!-- SLIDE 10: THANK YOU -->
+<div class="slide" id="s10">
+  <div style="text-align:center">
+    <div style="font-size:64px;margin-bottom:16px">🌿</div>
+    <p class="sec-label" style="text-align:center">VVCE · IDT Project · 2026</p>
+    <div class="slide-title"><span>Thank You</span></div>
+    <p style="font-size:18px;color:#94d9d4;margin-bottom:32px;max-width:600px;margin-left:auto;margin-right:auto">RuralCare Connect — Making quality healthcare accessible to every corner of rural India.</p>
+    <div class="flow" style="margin-bottom:32px">
+      <div class="flow-box">🌐 ruralcare-connect-production.up.railway.app</div>
+    </div>
+    <p style="font-size:20px;font-weight:700;color:var(--gold);margin-bottom:16px">Questions &amp; Discussion</p>
+    <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
+      <span class="pill pill-teal">Team Presentation</span>
+      <span class="pill pill-gold">Prototype Demo</span>
+      <span class="pill pill-teal">Q&amp;A</span>
+    </div>
+  </div>
+</div>
+
+</div><!-- end deck -->
+
+<div id="nav">
+  <button onclick="go(-1)" title="Previous">◀</button>
+  <span id="counter">1 / 12</span>
+  <button onclick="go(1)" title="Next">▶</button>
+</div>
+
+<script>
+const slides=document.querySelectorAll('.slide');
+let cur=0;
+function show(n){
+  slides[cur].classList.remove('active');
+  cur=Math.max(0,Math.min(n,slides.length-1));
+  slides[cur].classList.add('active');
+  document.getElementById('counter').textContent=(cur+1)+' / '+slides.length;
+  document.getElementById('progress').style.width=((cur+1)/slides.length*100)+'%';
+}
+function go(d){show(cur+d);}
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='ArrowDown')go(1);
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp')go(-1);
+});
+show(0);
+</script>
+</body>
+</html>
