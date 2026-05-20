@@ -1,0 +1,10 @@
+Keep this file and signing.keystore in a safe place. You'll need these files if you want to upload future versions of your PWA to the Google Play Store.
+
+Key store file: signing.keystore
+Key store password: cbXjkQd8DLyt
+Key alias: ruralcare
+Key password: cbXjkQd8DLyt
+Signer's full name: RuralCare Connect
+Signer's organization: RuralCare
+Signer's organizational unit: App
+Signer's country code: IN
