@@ -425,30 +425,43 @@ let _chatBotTyping  = false;
 
 async function loadChat() {
   const el = document.getElementById('page-chat');
+  if (!el) return;
 
+  const userName = gu()?.name?.split(' ')[0] || 'there';
+
+  // Render EVERYTHING synchronously — no awaits before this
   el.innerHTML = `
     <div class="chat-hdr">
       <div class="chat-hdr-info">
-        <div class="chat-bot-av">🤖</div>
+        <div class="chat-bot-av">&#x1F916;</div>
         <div>
           <div class="chat-bot-name">MediBot</div>
-          <div class="chat-bot-sub">AI Symptom Checker · Powered by Gemini</div>
+          <div class="chat-bot-sub">AI Symptom Checker &middot; Powered by Gemini</div>
         </div>
       </div>
-      <button class="btn btn-outline btn-sm" id="chat-new-btn" onclick="resetChat()">🔄 New Chat</button>
+      <button class="btn btn-outline btn-sm" onclick="resetChat()">&#x1F504; New Chat</button>
     </div>
-    <div class="chat-msgs" id="chat-msgs"></div>
+    <div class="chat-msgs" id="chat-msgs">
+      <div class="bubble-row">
+        <div class="b-av">&#x1F916;</div>
+        <div class="bubble bot-msg">
+          Hi ${userName}! &#x1F44B; I&rsquo;m MediBot, your AI health assistant.<br><br>
+          Tell me what symptoms or health concerns you have today and I&rsquo;ll help you decide the best next step.
+        </div>
+      </div>
+    </div>
     <div class="chat-input-area">
       <input class="chat-input" id="chat-input"
         placeholder="Describe your symptoms..."
-        onkeydown="if(event.key==='Enter'){event.preventDefault();sendSymptomMsg();}"/>
-      <button class="chat-send" id="chat-send-btn" onclick="sendSymptomMsg()">➤</button>
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendSymptomMsg();}"/>
+      <button class="chat-send" id="chat-send-btn" onclick="sendSymptomMsg()">&#x27A4;</button>
     </div>`;
 
   _chatMessages  = [];
   _chatBotTyping = false;
+  _chatPatientCtx = {};
 
-  // ── Load patient profile from Supabase to personalise Gemini's system prompt ──
+  // Load patient profile in background — chat is already visible above
   try {
     const { patient } = await api('/patients/me');
     _chatPatientCtx = {
@@ -459,15 +472,9 @@ async function loadChat() {
     };
   } catch { _chatPatientCtx = {}; }
 
-  // ── Welcome greeting ──────────────────────────────────────────────────────
-  const name = gu()?.name?.split(' ')[0] || 'there';
-  _appendBubble('bot',
-    `Hi ${name}! 👋 I'm MediBot, your AI health assistant.\n\n` +
-    `Tell me what symptoms or health concerns you have today, and I'll help you figure out the best next step.`
-  );
-
-  setTimeout(() => document.getElementById('chat-input')?.focus(), 300);
+  document.getElementById('chat-input')?.focus();
 }
+
 
 // ── Append a chat bubble ───────────────────────────────────────────────────
 function _appendBubble(role, text) {
