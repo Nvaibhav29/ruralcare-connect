@@ -1,4 +1,4 @@
-const CACHE = 'ruralcare-v1';
+const CACHE = 'ruralcare-v3'; // bumped to bust SW cache after MediBot update
 
 // Core assets to cache for offline support
 const PRECACHE = [
