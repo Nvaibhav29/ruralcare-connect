@@ -483,7 +483,9 @@ function _appendBubble(role, text) {
     ? `<div class="b-av">🤖</div><div class="bubble bot-msg">${safe}</div>`
     : `<div class="bubble user-msg">${safe}</div>`;
   msgs.appendChild(div);
-  msgs.scrollTop = msgs.scrollHeight;
+  // scroll-area is the actual scrollable container (chat-msgs just flows inside it)
+  const sa = document.querySelector('.scroll-area');
+  if (sa) sa.scrollTop = sa.scrollHeight;
 }
 
 // ── Typing indicator ───────────────────────────────────────────────────────
@@ -498,7 +500,8 @@ function _showTyping() {
       <div class="typing-dots"><span></span><span></span><span></span></div>
     </div>`;
   msgs.appendChild(div);
-  msgs.scrollTop = msgs.scrollHeight;
+  const sa = document.querySelector('.scroll-area');
+  if (sa) sa.scrollTop = sa.scrollHeight;
 }
 function _removeTyping() { document.getElementById('chat-typing')?.remove(); }
 
@@ -548,7 +551,8 @@ function _showVerdict(verdict) {
     <div class="vc-desc">${cfg.desc}</div>
     <div class="vc-actions">${cfg.btns}</div>`;
   msgs.appendChild(card);
-  msgs.scrollTop = msgs.scrollHeight;
+  const sa = document.querySelector('.scroll-area');
+  if (sa) sa.scrollTop = sa.scrollHeight;
 
   // Lock input — conversation is complete
   const inp = document.getElementById('chat-input');
