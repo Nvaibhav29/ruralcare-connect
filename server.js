@@ -36,44 +36,8 @@ async function start() {
   app.use('/api/emergency', require('./routes/emergency'));
   app.use('/api/audit',     require('./routes/audit'));
   app.use('/api/district',  require('./routes/district'));
+  app.use('/api/chatbot',   require('./routes/chatbot'));  // ← MediBot symptom checker
   app.get('/api/health', (req, res) => res.json({ status:'ok', db:'supabase', time: new Date().toISOString() }));
-
-  app.get('/api/test-gemini', async (req, res) => {
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey || apiKey === 'your_gemini_api_key_here') return res.json({ error: 'Key not set' });
-    try {
-      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-      const data = await r.json();
-      const models = data.models?.map(m => m.name) || data;
-      res.json({ keyPrefix: apiKey.slice(0,8)+'...', models });
-    } catch(e) { res.json({ error: e.message }); }
-  });
-
-  // ── Symptom Checker (Gemini Flash — free tier) ────────────────
-  app.post('/api/symptom-check', async (req, res) => {
-    try {
-      const { messages, system } = req.body;
-      const contents = messages.map((m, i) => ({
-        role: m.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: i === 0 ? `${system}\n\nPatient: ${m.content}` : m.content }]
-      }));
-      const apiKey = process.env.GEMINI_API_KEY;
-      if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY not set' });
-
-      const r = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents, generationConfig: { maxOutputTokens: 600 } })
-        }
-      );
-      const data = await r.json();
-      if (data.error) { console.error('Gemini error:', data.error); return res.status(500).json({ error: data.error.message }); }
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      res.json({ text });
-    } catch(e) { console.error('symptom-check error:', e.message); res.status(500).json({ error: e.message }); }
-  });
 
   // ── 6. Serve frontend ─────────────────────────────────────────
   app.use(express.static(__dirname));

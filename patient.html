@@ -228,6 +228,93 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);font
 .action-title{font-size:13px;font-weight:700;color:var(--text);}
 .action-desc{font-size:11px;color:var(--text3);margin-top:3px;line-height:1.4;}
 
+/* ── MediBot Chat ── */
+#page-chat.active{
+  padding:0;overflow:hidden;
+  display:flex!important;flex-direction:column;
+  height:calc(100dvh - 56px - var(--nav-h));
+}
+.chat-hdr{
+  padding:13px 16px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;background:#fff;
+}
+.chat-hdr-info{display:flex;align-items:center;gap:10px;}
+.chat-bot-av{
+  width:40px;height:40px;border-radius:50%;
+  background:linear-gradient(135deg,var(--teal),var(--teal-d));
+  display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;
+  box-shadow:0 2px 8px rgba(15,118,110,.3);
+}
+.chat-bot-name{font-size:15px;font-weight:700;color:var(--text);}
+.chat-bot-sub{font-size:11px;color:var(--text3);margin-top:1px;}
+.chat-msgs{
+  flex:1;overflow-y:auto;padding:14px 16px;
+  display:flex;flex-direction:column;gap:12px;
+  -webkit-overflow-scrolling:touch;
+}
+.bubble-row{display:flex;align-items:flex-end;gap:8px;}
+.bubble-row.from-user{flex-direction:row-reverse;}
+.b-av{
+  width:32px;height:32px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--teal),var(--teal-d));
+  display:flex;align-items:center;justify-content:center;font-size:15px;
+}
+.bubble{
+  max-width:78%;padding:12px 15px;
+  font-size:14px;line-height:1.55;
+}
+.bubble.bot-msg{
+  background:#fff;border:1px solid var(--border);
+  border-radius:18px 18px 18px 4px;color:var(--text);
+  box-shadow:0 1px 6px rgba(15,118,110,.08);
+}
+.bubble.user-msg{
+  background:linear-gradient(135deg,var(--teal),var(--teal-d));
+  color:#fff;border-radius:18px 18px 4px 18px;
+}
+.typing-dots{display:flex;align-items:center;gap:5px;padding:2px 0;}
+.typing-dots span{
+  width:8px;height:8px;border-radius:50%;background:var(--text3);
+  animation:tdot 1.4s ease-in-out infinite;
+}
+.typing-dots span:nth-child(2){animation-delay:.2s;}
+.typing-dots span:nth-child(3){animation-delay:.4s;}
+@keyframes tdot{0%,80%,100%{transform:scale(.7);opacity:.4}40%{transform:scale(1);opacity:1}}
+.chat-input-area{
+  padding:10px 16px;border-top:1px solid var(--border);
+  background:#fff;flex-shrink:0;display:flex;gap:8px;align-items:center;
+}
+.chat-input{
+  flex:1;padding:12px 16px;border:1.5px solid var(--border);
+  border-radius:24px;font-family:'Outfit',sans-serif;font-size:14px;
+  background:#f8fffe;outline:none;transition:border-color .2s;
+}
+.chat-input:focus{border-color:var(--teal);}
+.chat-input:disabled{opacity:.6;background:#f1f5f9;}
+.chat-send{
+  width:46px;height:46px;border-radius:50%;
+  background:linear-gradient(135deg,var(--teal),var(--teal-d));
+  border:none;color:#fff;font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:transform .15s,opacity .15s;
+}
+.chat-send:active{transform:scale(.9);}
+.chat-send:disabled{opacity:.45;cursor:not-allowed;}
+/* Verdict cards */
+.verdict-card{border-radius:16px;padding:18px;}
+.vc-normal{background:linear-gradient(135deg,#d1fae5,#a7f3d0);border:1.5px solid var(--border2);}
+.vc-medicine{background:linear-gradient(135deg,#dbeafe,#bfdbfe);border:1.5px solid #93c5fd;}
+.vc-doctor{background:linear-gradient(135deg,#fef9c3,#fde68a);border:1.5px solid #fcd34d;}
+.vc-emergency{
+  background:linear-gradient(135deg,#fee2e2,#fecaca);border:1.5px solid #fca5a5;
+  animation:vcemg 2s ease-in-out infinite;
+}
+@keyframes vcemg{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.3)}50%{box-shadow:0 0 0 10px rgba(220,38,38,0)}}
+.vc-title{font-size:15px;font-weight:700;margin-bottom:6px;}
+.vc-desc{font-size:13px;line-height:1.5;margin-bottom:14px;}
+.vc-actions{display:flex;flex-direction:column;gap:8px;}
+
 </style>
 </head>
 <body>
@@ -322,6 +409,7 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);font
     <div class="page-content" id="page-meds"></div>
     <div class="page-content" id="page-emg"></div>
     <div class="page-content" id="page-records"></div>
+    <div class="page-content" id="page-chat"></div>
   </div>
 
   <!-- Bottom Navigation -->
@@ -344,7 +432,11 @@ body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);font
     </button>
     <button class="nav-item" id="nav-records" onclick="goTab('records')">
       <span class="nav-icon">📄</span>
-      <span class="nav-label">My Records</span>
+      <span class="nav-label">Records</span>
+    </button>
+    <button class="nav-item" id="nav-chat" onclick="goTab('chat')">
+      <span class="nav-icon">🤖</span>
+      <span class="nav-label">MediBot</span>
     </button>
   </nav>
 </div>

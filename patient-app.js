@@ -91,7 +91,7 @@ function doLogout() {
 }
 
 // ── Tab Navigation ─────────────────────────────────────────────────────
-const tabs = ['home', 'hospitals', 'meds', 'emg', 'records'];
+const tabs = ['home', 'hospitals', 'meds', 'emg', 'records', 'chat'];
 let currentTab = 'home';
 
 function goTab(tab) {
@@ -101,13 +101,14 @@ function goTab(tab) {
     const n = document.getElementById('nav-' + t);
     if (n) n.classList.toggle('active', t === tab);
   });
-  const loaders = { home: loadHome, hospitals: loadHospitals, meds: loadMeds, emg: loadEmg, records: loadRecords };
+  const loaders = { home: loadHome, hospitals: loadHospitals, meds: loadMeds, emg: loadEmg, records: loadRecords, chat: loadChat };
   const el = document.getElementById('page-' + tab);
   if (el && !el.dataset.loaded) {
     loaders[tab]?.();
     el.dataset.loaded = '1';
   }
-  document.querySelector('.scroll-area').scrollTop = 0;
+  // Don't reset scroll for chat tab (it manages its own scroll)
+  if (tab !== 'chat') document.querySelector('.scroll-area').scrollTop = 0;
 }
 
 function skeleton(n = 3) {
@@ -416,3 +417,199 @@ window.addEventListener('load', () => {
       .catch(err => console.warn('SW registration failed:', err));
   }
 });
+
+// ── MEDIBOT CHAT ───────────────────────────────────────────────────────────
+let _chatMessages   = [];   // Full conversation history
+let _chatPatientCtx = null; // Patient profile from Supabase (enriches system prompt)
+let _chatBotTyping  = false;
+
+async function loadChat() {
+  const el = document.getElementById('page-chat');
+
+  el.innerHTML = `
+    <div class="chat-hdr">
+      <div class="chat-hdr-info">
+        <div class="chat-bot-av">🤖</div>
+        <div>
+          <div class="chat-bot-name">MediBot</div>
+          <div class="chat-bot-sub">AI Symptom Checker · Powered by Gemini</div>
+        </div>
+      </div>
+      <button class="btn btn-outline btn-sm" id="chat-new-btn" onclick="resetChat()">🔄 New Chat</button>
+    </div>
+    <div class="chat-msgs" id="chat-msgs"></div>
+    <div class="chat-input-area">
+      <input class="chat-input" id="chat-input"
+        placeholder="Describe your symptoms..."
+        onkeydown="if(event.key==='Enter'){event.preventDefault();sendSymptomMsg();}"/>
+      <button class="chat-send" id="chat-send-btn" onclick="sendSymptomMsg()">➤</button>
+    </div>`;
+
+  _chatMessages  = [];
+  _chatBotTyping = false;
+
+  // ── Load patient profile from Supabase to personalise Gemini's system prompt ──
+  try {
+    const { patient } = await api('/patients/me');
+    _chatPatientCtx = {
+      age:         patient.age,
+      gender:      patient.gender,
+      conditions:  patient.conditions  || [],
+      medications: (patient.medications || []).filter(m => m.active).map(m => m.medicine_name)
+    };
+  } catch { _chatPatientCtx = {}; }
+
+  // ── Welcome greeting ──────────────────────────────────────────────────────
+  const name = gu()?.name?.split(' ')[0] || 'there';
+  _appendBubble('bot',
+    `Hi ${name}! 👋 I'm MediBot, your AI health assistant.\n\n` +
+    `Tell me what symptoms or health concerns you have today, and I'll help you figure out the best next step.`
+  );
+
+  setTimeout(() => document.getElementById('chat-input')?.focus(), 300);
+}
+
+// ── Append a chat bubble ───────────────────────────────────────────────────
+function _appendBubble(role, text) {
+  const msgs = document.getElementById('chat-msgs');
+  if (!msgs) return;
+  const isBot = (role === 'bot');
+  const div   = document.createElement('div');
+  div.className = `bubble-row${isBot ? '' : ' from-user'}`;
+  const safe = text
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\n/g, '<br>');
+  div.innerHTML = isBot
+    ? `<div class="b-av">🤖</div><div class="bubble bot-msg">${safe}</div>`
+    : `<div class="bubble user-msg">${safe}</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+// ── Typing indicator ───────────────────────────────────────────────────────
+function _showTyping() {
+  const msgs = document.getElementById('chat-msgs');
+  if (!msgs) return;
+  const div = document.createElement('div');
+  div.id = 'chat-typing';
+  div.className = 'bubble-row';
+  div.innerHTML = `<div class="b-av">🤖</div>
+    <div class="bubble bot-msg">
+      <div class="typing-dots"><span></span><span></span><span></span></div>
+    </div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+function _removeTyping() { document.getElementById('chat-typing')?.remove(); }
+
+// ── Verdict card ───────────────────────────────────────────────────────────
+function _showVerdict(verdict) {
+  const msgs = document.getElementById('chat-msgs');
+  if (!msgs || !verdict) return;
+
+  const cfgMap = {
+    normal: {
+      cls:   'vc-normal',
+      title: '✅ You should be fine!',
+      desc:  'Your symptoms appear mild. Rest well, stay hydrated, and monitor yourself. Visit a doctor if things worsen.',
+      btns:  `<button class="btn btn-primary btn-sm" onclick="resetChat()">Start New Chat</button>`
+    },
+    medicine: {
+      cls:   'vc-medicine',
+      title: `💊 Suggested: ${verdict.medicine}`,
+      desc:  `This over-the-counter medicine may help. Available at government rates at nearby hospitals.`,
+      btns:  `<button class="btn btn-primary btn-sm btn-full" onclick="goTab('meds')">Find at Nearby Hospitals →</button>
+              <button class="btn btn-outline btn-sm btn-full" style="margin-top:2px" onclick="resetChat()">New Chat</button>`
+    },
+    doctor: {
+      cls:   'vc-doctor',
+      title: '🏥 Please See a Doctor',
+      desc:  'Your symptoms need professional medical attention. Visit the nearest hospital at your earliest convenience.',
+      btns:  `<button class="btn btn-primary btn-sm btn-full" onclick="goTab('hospitals')">Find Hospitals Near You →</button>
+              <button class="btn btn-outline btn-sm btn-full" style="margin-top:2px" onclick="resetChat()">New Chat</button>`
+    },
+    emergency: {
+      cls:   'vc-emergency',
+      title: '🚨 This Looks Serious — Act Now!',
+      desc:  'Your symptoms may be dangerous. Please call 108 immediately or go directly to the hospital emergency ward.',
+      btns:  `<button class="btn btn-red btn-sm btn-full" onclick="triggerSOS()">🚑 Send SOS Now</button>
+              <button class="btn btn-outline btn-sm btn-full" style="border-color:#fca5a5;color:#dc2626;margin-top:2px" onclick="toast('📞 Calling 108...')">📞 Call 108 — Free Ambulance</button>
+              <button class="btn btn-outline btn-sm btn-full" style="margin-top:2px" onclick="goTab('emg')">View Emergency Info</button>`
+    }
+  };
+
+  const cfg = cfgMap[verdict.type];
+  if (!cfg) return;
+
+  const card = document.createElement('div');
+  card.className = `verdict-card ${cfg.cls}`;
+  card.innerHTML = `
+    <div class="vc-title">${cfg.title}</div>
+    <div class="vc-desc">${cfg.desc}</div>
+    <div class="vc-actions">${cfg.btns}</div>`;
+  msgs.appendChild(card);
+  msgs.scrollTop = msgs.scrollHeight;
+
+  // Lock input — conversation is complete
+  const inp = document.getElementById('chat-input');
+  const btn = document.getElementById('chat-send-btn');
+  if (inp) { inp.disabled = true; inp.placeholder = 'Chat ended — tap "New Chat" to start again'; }
+  if (btn) btn.disabled = true;
+}
+
+// ── Send message ───────────────────────────────────────────────────────────
+async function sendSymptomMsg() {
+  if (_chatBotTyping) return;
+  const input = document.getElementById('chat-input');
+  const text  = input?.value?.trim();
+  if (!text) return;
+
+  input.value = '';
+  _appendBubble('user', text);
+  _chatMessages.push({ role: 'user', content: text });
+
+  _chatBotTyping = true;
+  _showTyping();
+
+  try {
+    const token = localStorage.getItem('rc_token');
+    const res   = await fetch('/api/chatbot/message', {
+      method:  'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify({
+        messages:       _chatMessages,
+        patientContext: _chatPatientCtx
+      })
+    });
+    const data = await res.json();
+    _removeTyping();
+    _chatBotTyping = false;
+
+    if (data.error) {
+      _appendBubble('bot', '⚠️ Sorry, something went wrong. Please try again in a moment.');
+      return;
+    }
+
+    _appendBubble('bot', data.text);
+    _chatMessages.push({ role: 'assistant', content: data.text });
+
+    if (data.verdict) setTimeout(() => _showVerdict(data.verdict), 350);
+
+  } catch (e) {
+    _removeTyping();
+    _chatBotTyping = false;
+    _appendBubble('bot', '⚠️ Connection error. Please check your internet and try again.');
+  }
+}
+
+// ── Reset / start new chat ─────────────────────────────────────────────────
+function resetChat() {
+  _chatMessages  = [];
+  _chatBotTyping = false;
+  const el = document.getElementById('page-chat');
+  if (el) { el.dataset.loaded = ''; loadChat(); }
+}
+
