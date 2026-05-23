@@ -1,4 +1,4 @@
-const CACHE = 'ruralcare-v3'; // bumped to bust SW cache after MediBot update
+const CACHE = 'ruralcare-v1';
 
 // Core assets to cache for offline support
 const PRECACHE = [
@@ -12,7 +12,7 @@ const PRECACHE = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE)
-      .then(cache => cache.addAll(PRECACHE).catch(() => {}))
+      .then(cache => cache.addAll(PRECACHE).catch(() => { }))
       .then(() => self.skipWaiting())
   );
 });

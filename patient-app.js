@@ -87,7 +87,7 @@ function clearSession() {
 function doLogout() {
   const token = gt();
   clearSession();
-  if (token) fetch(API + '/auth/logout', { method: 'POST', headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
+  if (token) fetch(API + '/auth/logout', { method: 'POST', headers: { Authorization: `Bearer ${token}` } }).catch(() => { });
 }
 
 // ── Tab Navigation ─────────────────────────────────────────────────────
@@ -234,8 +234,8 @@ async function fetchMeds(q) {
         </div>
         <div style="flex-shrink:0;margin-left:8px">
           ${m.quantity_available > 0
-            ? `<button class="btn btn-primary btn-sm" onclick="reserveMed(${m.id},'${m.name.replace(/'/g, "\\'")}')">Reserve</button>`
-            : `<button class="btn btn-outline btn-sm" onclick="toast('🔔 You will be notified when available')">Notify</button>`}
+          ? `<button class="btn btn-primary btn-sm" onclick="reserveMed(${m.id},'${m.name.replace(/'/g, "\\'")}')">Reserve</button>`
+          : `<button class="btn btn-outline btn-sm" onclick="toast('🔔 You will be notified when available')">Notify</button>`}
         </div>
       </div>`;
     }).join('') : '<div style="text-align:center;padding:30px;color:var(--text3)">No medicines found</div>';
@@ -419,69 +419,62 @@ window.addEventListener('load', () => {
 });
 
 // ── MEDIBOT CHAT ───────────────────────────────────────────────────────────
-let _chatMessages   = [];   // Full conversation history
+let _chatMessages = [];   // Full conversation history
 let _chatPatientCtx = null; // Patient profile from Supabase (enriches system prompt)
-let _chatBotTyping  = false;
+let _chatBotTyping = false;
 
 async function loadChat() {
   const el = document.getElementById('page-chat');
-  if (!el) return;
 
-  const userName = gu()?.name?.split(' ')[0] || 'there';
-
-  // Render EVERYTHING synchronously — no awaits before this
   el.innerHTML = `
     <div class="chat-hdr">
       <div class="chat-hdr-info">
-        <div class="chat-bot-av">&#x1F916;</div>
+        <div class="chat-bot-av">🤖</div>
         <div>
           <div class="chat-bot-name">MediBot</div>
-          <div class="chat-bot-sub">AI Symptom Checker &middot; Powered by Gemini</div>
+          <div class="chat-bot-sub">AI Symptom Checker · Powered by Gemini</div>
         </div>
       </div>
-      <button class="btn btn-outline btn-sm" onclick="resetChat()">&#x1F504; New Chat</button>
+      <button class="btn btn-outline btn-sm" id="chat-new-btn" onclick="resetChat()">🔄 New Chat</button>
     </div>
-    <div class="chat-msgs" id="chat-msgs">
-      <div class="bubble-row">
-        <div class="b-av">&#x1F916;</div>
-        <div class="bubble bot-msg">
-          Hi ${userName}! &#x1F44B; I&rsquo;m MediBot, your AI health assistant.<br><br>
-          Tell me what symptoms or health concerns you have today and I&rsquo;ll help you decide the best next step.
-        </div>
-      </div>
-    </div>
+    <div class="chat-msgs" id="chat-msgs"></div>
     <div class="chat-input-area">
       <input class="chat-input" id="chat-input"
         placeholder="Describe your symptoms..."
-        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendSymptomMsg();}"/>
-      <button class="chat-send" id="chat-send-btn" onclick="sendSymptomMsg()">&#x27A4;</button>
+        onkeydown="if(event.key==='Enter'){event.preventDefault();sendSymptomMsg();}"/>
+      <button class="chat-send" id="chat-send-btn" onclick="sendSymptomMsg()">➤</button>
     </div>`;
 
-  _chatMessages  = [];
+  _chatMessages = [];
   _chatBotTyping = false;
-  _chatPatientCtx = {};
 
-  // Load patient profile in background — chat is already visible above
+  // ── Load patient profile from Supabase to personalise Gemini's system prompt ──
   try {
     const { patient } = await api('/patients/me');
     _chatPatientCtx = {
-      age:         patient.age,
-      gender:      patient.gender,
-      conditions:  patient.conditions  || [],
+      age: patient.age,
+      gender: patient.gender,
+      conditions: patient.conditions || [],
       medications: (patient.medications || []).filter(m => m.active).map(m => m.medicine_name)
     };
   } catch { _chatPatientCtx = {}; }
 
-  document.getElementById('chat-input')?.focus();
-}
+  // ── Welcome greeting ──────────────────────────────────────────────────────
+  const name = gu()?.name?.split(' ')[0] || 'there';
+  _appendBubble('bot',
+    `Hi ${name}! 👋 I'm MediBot, your AI health assistant.\n\n` +
+    `Tell me what symptoms or health concerns you have today, and I'll help you figure out the best next step.`
+  );
 
+  setTimeout(() => document.getElementById('chat-input')?.focus(), 300);
+}
 
 // ── Append a chat bubble ───────────────────────────────────────────────────
 function _appendBubble(role, text) {
   const msgs = document.getElementById('chat-msgs');
   if (!msgs) return;
   const isBot = (role === 'bot');
-  const div   = document.createElement('div');
+  const div = document.createElement('div');
   div.className = `bubble-row${isBot ? '' : ' from-user'}`;
   const safe = text
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -519,30 +512,30 @@ function _showVerdict(verdict) {
 
   const cfgMap = {
     normal: {
-      cls:   'vc-normal',
+      cls: 'vc-normal',
       title: '✅ You should be fine!',
-      desc:  'Your symptoms appear mild. Rest well, stay hydrated, and monitor yourself. Visit a doctor if things worsen.',
-      btns:  `<button class="btn btn-primary btn-sm" onclick="resetChat()">Start New Chat</button>`
+      desc: 'Your symptoms appear mild. Rest well, stay hydrated, and monitor yourself. Visit a doctor if things worsen.',
+      btns: `<button class="btn btn-primary btn-sm" onclick="resetChat()">Start New Chat</button>`
     },
     medicine: {
-      cls:   'vc-medicine',
+      cls: 'vc-medicine',
       title: `💊 Suggested: ${verdict.medicine}`,
-      desc:  `This over-the-counter medicine may help. Available at government rates at nearby hospitals.`,
-      btns:  `<button class="btn btn-primary btn-sm btn-full" onclick="goTab('meds')">Find at Nearby Hospitals →</button>
+      desc: `This over-the-counter medicine may help. Available at government rates at nearby hospitals.`,
+      btns: `<button class="btn btn-primary btn-sm btn-full" onclick="goTab('meds')">Find at Nearby Hospitals →</button>
               <button class="btn btn-outline btn-sm btn-full" style="margin-top:2px" onclick="resetChat()">New Chat</button>`
     },
     doctor: {
-      cls:   'vc-doctor',
+      cls: 'vc-doctor',
       title: '🏥 Please See a Doctor',
-      desc:  'Your symptoms need professional medical attention. Visit the nearest hospital at your earliest convenience.',
-      btns:  `<button class="btn btn-primary btn-sm btn-full" onclick="goTab('hospitals')">Find Hospitals Near You →</button>
+      desc: 'Your symptoms need professional medical attention. Visit the nearest hospital at your earliest convenience.',
+      btns: `<button class="btn btn-primary btn-sm btn-full" onclick="goTab('hospitals')">Find Hospitals Near You →</button>
               <button class="btn btn-outline btn-sm btn-full" style="margin-top:2px" onclick="resetChat()">New Chat</button>`
     },
     emergency: {
-      cls:   'vc-emergency',
+      cls: 'vc-emergency',
       title: '🚨 This Looks Serious — Act Now!',
-      desc:  'Your symptoms may be dangerous. Please call 108 immediately or go directly to the hospital emergency ward.',
-      btns:  `<button class="btn btn-red btn-sm btn-full" onclick="triggerSOS()">🚑 Send SOS Now</button>
+      desc: 'Your symptoms may be dangerous. Please call 108 immediately or go directly to the hospital emergency ward.',
+      btns: `<button class="btn btn-red btn-sm btn-full" onclick="triggerSOS()">🚑 Send SOS Now</button>
               <button class="btn btn-outline btn-sm btn-full" style="border-color:#fca5a5;color:#dc2626;margin-top:2px" onclick="toast('📞 Calling 108...')">📞 Call 108 — Free Ambulance</button>
               <button class="btn btn-outline btn-sm btn-full" style="margin-top:2px" onclick="goTab('emg')">View Emergency Info</button>`
     }
@@ -572,7 +565,7 @@ function _showVerdict(verdict) {
 async function sendSymptomMsg() {
   if (_chatBotTyping) return;
   const input = document.getElementById('chat-input');
-  const text  = input?.value?.trim();
+  const text = input?.value?.trim();
   if (!text) return;
 
   input.value = '';
@@ -584,14 +577,14 @@ async function sendSymptomMsg() {
 
   try {
     const token = localStorage.getItem('rc_token');
-    const res   = await fetch('/api/chatbot/message', {
-      method:  'POST',
+    const res = await fetch('/api/chatbot/message', {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {})
       },
       body: JSON.stringify({
-        messages:       _chatMessages,
+        messages: _chatMessages,
         patientContext: _chatPatientCtx
       })
     });
@@ -618,7 +611,7 @@ async function sendSymptomMsg() {
 
 // ── Reset / start new chat ─────────────────────────────────────────────────
 function resetChat() {
-  _chatMessages  = [];
+  _chatMessages = [];
   _chatBotTyping = false;
   const el = document.getElementById('page-chat');
   if (el) { el.dataset.loaded = ''; loadChat(); }
