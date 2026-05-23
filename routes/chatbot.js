@@ -83,25 +83,23 @@ router.post('/message', async (req, res) => {
     const systemPrompt = buildSystemPrompt(patientContext || {});
 
     // Build Gemini multi-turn contents array
-    // First user message gets the system prompt prepended
-    const contents = messages.map((m, i) => ({
+    const contents = messages.map((m) => ({
       role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{
-        text: i === 0
-          ? `${systemPrompt}\n\n---\nPatient's first message: ${m.content}`
-          : m.content
-      }]
+      parts: [{ text: m.content }]
     }));
 
     const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
       {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({
           contents,
+          systemInstruction: {
+            parts: [{ text: systemPrompt }]
+          },
           generationConfig: {
-            maxOutputTokens: 500,
+            maxOutputTokens: 800,
             temperature:     0.7,
             topP:            0.9
           }
