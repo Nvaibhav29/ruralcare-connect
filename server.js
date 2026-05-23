@@ -38,15 +38,6 @@ async function start() {
   app.use('/api/district',  require('./routes/district'));
   app.use('/api/chatbot',   require('./routes/chatbot'));  // ← MediBot symptom checker
   app.get('/api/health', (req, res) => res.json({ status:'ok', db:'supabase', time: new Date().toISOString() }));
-  app.get('/api/debug-env', (req, res) => {
-    const key = process.env.GEMINI_API_KEY || '';
-    res.json({
-      exists: !!process.env.GEMINI_API_KEY,
-      length: key.length,
-      start: key.substring(0, 6),
-      end: key.substring(key.length - 6),
-    });
-  });
 
   // ── 6. Serve frontend ─────────────────────────────────────────
   app.use(express.static(__dirname));
