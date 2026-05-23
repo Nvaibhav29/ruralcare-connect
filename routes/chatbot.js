@@ -73,12 +73,10 @@ router.post('/message', async (req, res) => {
       return res.status(400).json({ error: 'messages array is required' });
     }
 
-    let apiKey = process.env.GEMINI_API_KEY;
-    // Fallback/override to the working user key if the configured key is missing or incorrect (ends with QCy3bM)
-    if (!apiKey || apiKey === 'undefined' || apiKey === 'null' || apiKey.endsWith('QCy3bM')) {
-      apiKey = 'AIzaSyBjiInLMPBYXHfPEFZOTVc3uBS_5Vg7d0w';
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey || apiKey.trim() === '' || apiKey === 'undefined' || apiKey === 'null') {
+      return res.status(500).json({ error: 'GEMINI_API_KEY is not configured on the server. Please set it in environment variables.' });
     }
-    if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY not configured on server' });
 
     const systemPrompt = buildSystemPrompt(patientContext || {});
 
