@@ -401,6 +401,58 @@ Supabase PostgreSQL — cloud database on AWS Tokyo
 
 ---
 
+## 🤖 Phase 4 — MediBot AI Symptom Chatbot (Added May 2026)
+
+### Overview
+MediBot is an intelligent, first-level symptom triage chatbot integrated directly into the patient portal. It allows patients to describe their symptoms in plain language, asks a few targeted follow-up questions, and outputs an actionable medical verdict linked directly to the application's native features.
+
+### Core Features
+
+1. **Supabase Patient Context Integration**
+   Before initiating the conversation, MediBot queries the database securely for the patient's age, gender, active medications, and chronic conditions. It passes this context privately in the system instructions so Gemini can perform personalized risk assessments (e.g., classifying chest pain in an elderly diabetic patient as an immediate emergency).
+
+2. **Advanced Multi-Turn Gemini Integration**
+   Uses `gemini-flash-latest` (powered by Google's production-grade Gemini models) for fast, stable, and cost-effective multi-turn chat conversations. It is capped at 1,500 requests/day per key under the free tier, preventing server quota failures.
+
+3. **Dedicated System Instructions**
+   Passed via the modern `systemInstruction` API payload (instead of prepended text) to enforce strict, safe, and concise guidelines:
+   - Max 3–4 sentences per response
+   - Simple, neighborly, jargon-free English
+   - Non-diagnostic triage (deciding severity, not making final diagnoses)
+   - Asking 2–3 targeted follow-up questions first
+
+4. **Actionable Verdict Cards**
+   Once enough information is gathered, the bot generates a standard verdict tag which the frontend parses and displays as a visually premium alert card with built-in action buttons:
+
+| Verdict Tag | UI Card Type | Action Triggered |
+|---|---|---|
+| `[VERDICT:NORMAL]` | Green (Success) | Reassurance & self-care instructions; Start New Chat button. |
+| `[VERDICT:MEDICINE:Name]` | Blue (Info) | Link to search and reserve the suggested OTC medicine in the local pharmacy. |
+| `[VERDICT:DOCTOR]` | Yellow (Warning) | Quick navigation to find and reserve a bed at the nearest hospital. |
+| `[VERDICT:EMERGENCY]` | Pulsing Red (Danger) | Immediate click-to-call 108 Ambulance and direct GPS-enabled SOS dispatch trigger. |
+
+### Technical Architecture & Code Flow
+
+```mermaid
+graph TD
+    User[Patient Interface] -->|Type message| AppJS[patient-app.js]
+    AppJS -->|POST /api/chatbot/message| Express[server.js / routes/chatbot.js]
+    Express -->|Query patient profile| DB[(Supabase PostgreSQL)]
+    DB -->|Return age/gender/history| Express
+    Express -->|Call API with systemInstruction & contents| Gemini[Gemini API]
+    Gemini -->|Generate text + verdict tag| Express
+    Express -->|Clean text & parse verdict| AppJS
+    AppJS -->|Render message bubble & Verdict Card| User
+```
+
+### Cache-Busting Strategy
+To bypass the aggressive **cache-first** policy of the PWA Service Worker (`sw.js`) and ensure all client devices receive the new MediBot features instantly without needing manual storage clears or hard reloads, we implemented:
+- **Script Query Versioning**: Version parameter appended to script path (`<script src="/patient-app.js?v=4"></script>`).
+- **Cache Registry Update**: Incremented Service Worker cache version to `'ruralcare-v4'` and updated precache file path.
+- **Dynamic Event Binding**: Moved the keydown event listener inside `patient-app.js` to pure JavaScript (`addEventListener`) to bypass browser HTML attribute parsing edge cases.
+
+---
+
 ## 🔑 Login Credentials (All Roles)
 
 | Role | Login ID | Password |
