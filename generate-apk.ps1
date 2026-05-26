@@ -1,3 +1,6 @@
+﻿$renderHost = "ruralcare-connect.onrender.com"
+$renderBase = "https://" + $renderHost
+
 $body = @{
   packageId = "com.ruralcare.connect"
   name = "RuralCare Connect"
@@ -9,9 +12,9 @@ $body = @{
   backgroundColor = "#0d4f47"
   enableNotifications = $false
   startUrl = "/patient"
-  iconUrl = "https://ruralcare-connect-production.up.railway.app/icons/icon-512.png"
-  maskableIconUrl = "https://ruralcare-connect-production.up.railway.app/icons/icon-512.png"
-  monochromeIconUrl = "https://ruralcare-connect-production.up.railway.app/icons/icon-512.png"
+  iconUrl = $renderBase + "/icons/icon-512.png"
+  maskableIconUrl = $renderBase + "/icons/icon-512.png"
+  monochromeIconUrl = $renderBase + "/icons/icon-512.png"
   splashScreenFadeOutDuration = 300
   signingMode = "new"
   signing = @{
@@ -24,19 +27,19 @@ $body = @{
     storePassword = "ruralcare2025"
   }
   generateAssetStatements = $true
-  host = "ruralcare-connect-production.up.railway.app"
-  manifestUrl = "https://ruralcare-connect-production.up.railway.app/manifest.json"
-  webManifestUrl = "https://ruralcare-connect-production.up.railway.app/manifest.json"
+  host = $renderHost
+  manifestUrl = $renderBase + "/manifest.json"
+  webManifestUrl = $renderBase + "/manifest.json"
   shortcuts = @()
   isChromeOSOnly = $false
   isMetaQuest = $false
   minSdkVersion = 21
-  appVersion = "1.0"
-  appVersionCode = 1
+  appVersion = "1.1"
+  appVersionCode = 2
   fallbackType = "customtabs"
   features = @{ locationDelegation = @{ enabled = $false }; playBilling = @{ enabled = $false } }
   enableSiteSettingsShortcut = $true
-  fullScopeUrl = "https://ruralcare-connect-production.up.railway.app/"
+  fullScopeUrl = $renderBase + "/"
   shareTarget = $null
   webManifest = @{
     name = "RuralCare Connect"
@@ -47,26 +50,31 @@ $body = @{
     theme_color = "#0f766e"
     background_color = "#0d4f47"
     icons = @(
-      @{ src = "https://ruralcare-connect-production.up.railway.app/icons/icon-512.png"; sizes = "512x512"; type = "image/png"; purpose = "any maskable" }
+      @{ src = $renderBase + "/icons/icon-512.png"; sizes = "512x512"; type = "image/png"; purpose = "any maskable" }
     )
   }
-} | ConvertTo-Json
+} | ConvertTo-Json -Depth 10
 
-Write-Host "Calling PWABuilder API to generate APK..."
+$outPath = "C:\ALL PROJECT\project\ruralcare-signed.apk.zip"
+
+Write-Host "RuralCare Connect - APK Generator"
+Write-Host "Target: $renderBase"
+Write-Host "Calling PWABuilder API..."
 Write-Host "This may take 1-2 minutes..."
 
 try {
-  $response = Invoke-WebRequest `
+  Invoke-WebRequest `
     -Uri "https://pwabuilder-cloudapk.azurewebsites.net/generateApkZip" `
     -Method POST `
     -ContentType "application/json" `
     -Body $body `
     -TimeoutSec 180 `
-    -OutFile "c:\project\ruralcare-signed.apk.zip"
-  
-  Write-Host "SUCCESS! Signed APK downloaded to c:\project\ruralcare-signed.apk.zip"
-  Write-Host "File size: $((Get-Item 'c:\project\ruralcare-signed.apk.zip').Length / 1MB) MB"
+    -OutFile $outPath
+
+  $sizeMB = [math]::Round((Get-Item $outPath).Length / 1MB, 2)
+  Write-Host "SUCCESS! Signed APK downloaded to $outPath"
+  Write-Host "File size: $sizeMB MB"
 } catch {
-  Write-Host "API call failed: $_"
-  Write-Host "Status: $($_.Exception.Response.StatusCode)"
+  Write-Host "API call failed"
+  Write-Host $_.Exception.Message
 }
