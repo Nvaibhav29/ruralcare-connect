@@ -82,6 +82,15 @@ function clearSession() {
   localStorage.removeItem('rc_user');
   document.getElementById('auth-screen').style.display = 'flex';
   document.getElementById('app-screen').style.display = 'none';
+  
+  // Clear all cached HTML and reset loaded flags to prevent data leakage between accounts
+  tabs.forEach(t => {
+    const el = document.getElementById('page-' + t);
+    if (el) {
+      el.innerHTML = '';
+      delete el.dataset.loaded;
+    }
+  });
 }
 
 function doLogout() {
@@ -617,3 +626,19 @@ function resetChat() {
   if (el) { el.dataset.loaded = ''; loadChat(); }
 }
 
+// ── Session Restore on Page Load ───────────────────────────────────────────
+// If a token + user already exist in localStorage (e.g. page refresh or
+// returning visitor), skip the auth screen and go straight to the app.
+document.addEventListener('DOMContentLoaded', () => {
+  const token = localStorage.getItem('rc_token');
+  const user  = JSON.parse(localStorage.getItem('rc_user') || 'null');
+  if (token && user && user.role === 'patient') {
+    // Restore session UI without re-fetching a new token
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('app-screen').style.display  = 'flex';
+    const initials = user.name?.charAt(0)?.toUpperCase() || '?';
+    document.getElementById('top-avatar').textContent     = initials;
+    document.getElementById('top-user-name').textContent  = user.name?.split(' ')[0] || '';
+    goTab('home');
+  }
+});
