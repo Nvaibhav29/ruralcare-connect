@@ -86,30 +86,38 @@ router.post('/message', async (req, res) => {
       parts: [{ text: m.content }]
     }));
 
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`,
-      {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({
-          contents,
-          systemInstruction: {
-            parts: [{ text: systemPrompt }]
-          },
-          generationConfig: {
-            maxOutputTokens: 800,
-            temperature:     0.7,
-            topP:            0.9
-          }
-        })
-      }
-    );
+    // Try models in order — fallback if one is overloaded or unavailable
+    const MODELS = ['gemini-2.0-flash', 'gemini-2.0-flash-lite'];
+    const geminiBody = JSON.stringify({
+      contents,
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      generationConfig: { maxOutputTokens: 800, temperature: 0.7, topP: 0.9 }
+    });
 
-    const data = await geminiRes.json();
+    let data = null;
+    let lastError = null;
+
+    for (const model of MODELS) {
+      // Retry up to 2 times per model on 503
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const geminiRes = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+          { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: geminiBody }
+        );
+        data = await geminiRes.json();
+        if (!data.error) break; // success
+        lastError = data.error;
+        // Only retry on 503 (overloaded), not on 429 (quota) or 4xx
+        if (data.error.code !== 503) break;
+        await new Promise(r => setTimeout(r, 1000)); // wait 1s before retry
+      }
+      if (!data.error) break; // model worked — stop trying
+      console.warn(`Model ${model} failed (${data.error.code}): ${data.error.message?.slice(0, 80)}`);
+    }
 
     if (data.error) {
-      console.error('Gemini API error:', data.error);
-      return res.status(502).json({ error: data.error.message || 'Gemini API error' });
+      console.error('Gemini API error (all models failed):', lastError);
+      return res.status(502).json({ error: lastError?.message || 'Gemini API error' });
     }
 
     const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
