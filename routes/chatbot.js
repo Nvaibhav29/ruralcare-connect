@@ -87,7 +87,7 @@ router.post('/message', async (req, res) => {
     }));
 
     // Try models in order — fallback if one is overloaded or unavailable
-    const MODELS = ['gemini-2.0-flash', 'gemini-2.0-flash-lite'];
+    const MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash'];
     const geminiBody = JSON.stringify({
       contents,
       systemInstruction: { parts: [{ text: systemPrompt }] },
