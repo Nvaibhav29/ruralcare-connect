@@ -483,7 +483,7 @@ async function updateBedRes(btn, hid, rid, status) {
 async function getPage(id) {
   const map = {
     home: pageHome, beds: pageBeds, meds: pageMeds, emg: pageEmg, records: pageRecords,
-    dash: pageDash, update: pageUpdate, shortage: pageShortage, audit: pageAudit,
+    dash: pageDash, update: pageUpdate, doctors: pageDoctors, shortage: pageShortage, audit: pageAudit,
     patrecords: pagePatRecords, medstock: pageMedicineStock, reservations: pageReservations,
     district: pageDistrict, govtshortage: pageGovtShortage
   };
