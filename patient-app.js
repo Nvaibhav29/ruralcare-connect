@@ -178,14 +178,53 @@ async function loadHospitals() {
   el.innerHTML = `<div class="card-hdr"><div class="card-title">🏥 Hospitals Near You</div><div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text3)"><span class="live-dot"></span>Live</div></div>${skeleton(3)}`;
   try {
     const { hospitals } = await api('/hospitals');
+
+    // Fetch doctors for all hospitals in parallel
+    const doctorsByHospital = {};
+    await Promise.all(hospitals.map(async h => {
+      try {
+        const { doctors } = await api(`/hospitals/${h.id}/doctors`);
+        doctorsByHospital[h.id] = doctors || [];
+      } catch { doctorsByHospital[h.id] = []; }
+    }));
+
     const statusBadge = h => {
       if ((h.beds_free || 0) === 0) return ['b-red', 'Full'];
       if ((h.beds_free || 0) < 5) return ['b-amber', 'Limited'];
       return ['b-green', 'Open'];
     };
+
     el.innerHTML = `<div class="card-hdr"><div class="card-title">🏥 Hospitals Near You</div><div style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text3)"><span class="live-dot"></span>Live</div></div>` +
       hospitals.map((h, i) => {
         const [cls, lbl] = statusBadge(h);
+        const docs = doctorsByHospital[h.id] || [];
+        const availDocs = docs.filter(d => d.available);
+
+        // Doctor section HTML
+        const docSection = docs.length > 0 ? `
+          <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:10px">
+            <button class="btn btn-outline btn-sm" style="width:100%;justify-content:space-between;display:flex"
+              onclick="toggleDoctorPanel(${h.id})">
+              <span>👨‍⚕️ ${availDocs.length} doctor${availDocs.length !== 1 ? 's' : ''} available • tap to view</span>
+              <span id="doc-arrow-${h.id}">▼</span>
+            </button>
+            <div id="doc-panel-${h.id}" style="display:none;margin-top:10px">
+              ${docs.map(d => `
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:${d.available ? '#f0fdf9' : '#fafafa'};border:1px solid ${d.available ? 'var(--border2)' : 'var(--border)'};border-radius:10px;margin-bottom:6px">
+                  <div>
+                    <div style="font-size:13px;font-weight:600;color:var(--text)">${d.name}</div>
+                    <div style="font-size:11px;color:var(--text3);margin-top:1px">${d.speciality}${d.available_from && d.available_to ? ' · ' + d.available_from + '–' + d.available_to : ''}</div>
+                  </div>
+                  <span style="font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;background:${d.available ? 'var(--teal-l)' : '#fee2e2'};color:${d.available ? 'var(--teal-d)' : 'var(--red)'}">
+                    ${d.available ? '🟢 On Duty' : '🔴 Off Duty'}
+                  </span>
+                </div>`).join('')}
+            </div>
+          </div>` : `
+          <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:8px;font-size:12px;color:var(--text3)">
+            👨‍⚕️ No doctor info available
+          </div>`;
+
         return `<div class="hosp-card ${i === 0 ? 'top-pick' : ''}">
           ${i === 0 ? '<div class="hosp-recommended">★ Nearest & Recommended</div>' : ''}
           <div style="display:flex;justify-content:space-between;align-items:flex-start">
@@ -199,13 +238,23 @@ async function loadHospitals() {
             <div class="res-chip">👨‍⚕️ <strong>${h.doctors_on_duty ?? '—'}</strong> docs</div>
           </div>
           ${h.public_alert_msg ? `<div class="alert al-amber" style="margin:8px 0">⚠️ ${h.public_alert_msg}</div>` : ''}
-          <div class="hosp-actions">
+          ${docSection}
+          <div class="hosp-actions" style="margin-top:10px">
             <button class="btn btn-outline btn-sm" onclick="toast('📞 Calling ${h.name}...')">📞 ${h.phone || 'Call'}</button>
             ${(h.beds_free || 0) > 0 ? `<button class="btn btn-primary btn-sm" onclick="openSheet(${h.id})">🛏️ Reserve Bed</button>` : '<span style="font-size:12px;color:var(--red);padding:4px 0">No beds available</span>'}
           </div>
         </div>`;
       }).join('');
   } catch (e) { el.innerHTML = `<div class="alert al-red">❌ ${e.message}</div>`; }
+}
+
+function toggleDoctorPanel(hid) {
+  const panel = document.getElementById(`doc-panel-${hid}`);
+  const arrow = document.getElementById(`doc-arrow-${hid}`);
+  if (!panel) return;
+  const open = panel.style.display === 'none';
+  panel.style.display = open ? 'block' : 'none';
+  if (arrow) arrow.textContent = open ? '▲' : '▼';
 }
 
 // ── MEDICINES ──────────────────────────────────────────────────────────

@@ -1,10 +1,10 @@
-const CACHE = 'ruralcare-v6';
+const CACHE = 'ruralcare-v7';
 
 // Core assets to cache for offline support
 const PRECACHE = [
   '/patient',
   '/patient.html',
-  '/patient-app.js?v=6',
+  '/patient-app.js?v=7',
   'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap'
 ];
 

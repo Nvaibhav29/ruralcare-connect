@@ -222,4 +222,98 @@ router.patch('/:id/bed-reservations/:rid/status', authenticate, requireRole('hos
   res.json({ message: `Reservation ${status}` });
 });
 
+// ── Doctor Availability ────────────────────────────────────────────────────────
+
+// GET /api/hospitals/:id/doctors  — all roles (patients can see available doctors)
+router.get('/:id/doctors', authenticate, async (req, res) => {
+  try {
+    const doctors = await db.all(
+      'SELECT * FROM hospital_doctors WHERE hospital_id = ? ORDER BY speciality, name',
+      [req.params.id]
+    );
+    res.json({ doctors });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/hospitals/:id/doctors  — hospital admin only
+router.post('/:id/doctors', authenticate, requireRole('hospital'), async (req, res) => {
+  const hid = parseInt(req.params.id);
+  if (req.user.hospital_id && req.user.hospital_id !== hid)
+    return res.status(403).json({ error: 'Can only update your own hospital' });
+
+  const { name, speciality, available = true, available_from, available_to } = req.body;
+  if (!name || !speciality) return res.status(400).json({ error: 'name and speciality are required' });
+
+  const result = await db.run(
+    `INSERT INTO hospital_doctors (hospital_id, name, speciality, available, available_from, available_to)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [hid, name.trim(), speciality.trim(), available, available_from || null, available_to || null]
+  );
+
+  await db.run(
+    `INSERT INTO audit_log (user_id, user_name, action_type, description, entity_type, entity_id)
+     VALUES (?, ?, 'update', ?, 'hospital_doctors', ?)`,
+    [req.user.id, req.user.name, `Doctor added: ${name} (${speciality})`, hid]
+  );
+
+  res.status(201).json({ message: 'Doctor added', id: result.lastID });
+});
+
+// PATCH /api/hospitals/:id/doctors/:did  — update doctor details
+router.patch('/:id/doctors/:did', authenticate, requireRole('hospital'), async (req, res) => {
+  const hid = parseInt(req.params.id);
+  const did = parseInt(req.params.did);
+  if (req.user.hospital_id && req.user.hospital_id !== hid)
+    return res.status(403).json({ error: 'Access denied' });
+
+  const { name, speciality, available_from, available_to } = req.body;
+  await db.run(
+    `UPDATE hospital_doctors SET name=?, speciality=?, available_from=?, available_to=?, updated_at=NOW()
+     WHERE id=? AND hospital_id=?`,
+    [name, speciality, available_from || null, available_to || null, did, hid]
+  );
+  res.json({ message: 'Doctor updated' });
+});
+
+// PATCH /api/hospitals/:id/doctors/:did/toggle  — flip available on/off
+router.patch('/:id/doctors/:did/toggle', authenticate, requireRole('hospital'), async (req, res) => {
+  const hid = parseInt(req.params.id);
+  const did = parseInt(req.params.did);
+  if (req.user.hospital_id && req.user.hospital_id !== hid)
+    return res.status(403).json({ error: 'Access denied' });
+
+  const doctor = await db.get('SELECT * FROM hospital_doctors WHERE id=? AND hospital_id=?', [did, hid]);
+  if (!doctor) return res.status(404).json({ error: 'Doctor not found' });
+
+  const newAvail = !doctor.available;
+  await db.run(
+    'UPDATE hospital_doctors SET available=?, updated_at=NOW() WHERE id=?',
+    [newAvail, did]
+  );
+
+  await db.run(
+    `INSERT INTO audit_log (user_id, user_name, action_type, description, entity_type, entity_id)
+     VALUES (?, ?, 'update', ?, 'hospital_doctors', ?)`,
+    [req.user.id, req.user.name, `Dr. ${doctor.name} marked ${newAvail ? 'available' : 'off duty'}`, hid]
+  );
+
+  res.json({ message: `Dr. ${doctor.name} is now ${newAvail ? 'available' : 'off duty'}`, available: newAvail });
+});
+
+// DELETE /api/hospitals/:id/doctors/:did
+router.delete('/:id/doctors/:did', authenticate, requireRole('hospital'), async (req, res) => {
+  const hid = parseInt(req.params.id);
+  const did = parseInt(req.params.did);
+  if (req.user.hospital_id && req.user.hospital_id !== hid)
+    return res.status(403).json({ error: 'Access denied' });
+
+  const doctor = await db.get('SELECT name FROM hospital_doctors WHERE id=? AND hospital_id=?', [did, hid]);
+  if (!doctor) return res.status(404).json({ error: 'Doctor not found' });
+
+  await db.run('DELETE FROM hospital_doctors WHERE id=? AND hospital_id=?', [did, hid]);
+  res.json({ message: `${doctor.name} removed` });
+});
+
 module.exports = router;

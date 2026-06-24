@@ -299,3 +299,147 @@ async function saveThreshold(hid, key, inputId) {
     toast(`✅ ${key} threshold saved to ${val}`);
   } catch(e) { toast('❌ '+e.message); }
 }
+
+// ── Page: Doctors ─────────────────────────────────────────────────────────────
+async function pageDoctors() {
+  const user = getUser();
+  const hid  = user?.hospital_id || 1;
+
+  const SPECIALITIES = [
+    'General Physician','Cardiologist','Gynaecologist','Paediatrician',
+    'Orthopaedic','ENT Specialist','Ophthalmologist','Dermatologist',
+    'Surgeon','Psychiatrist','Radiologist','Anaesthesiologist','Neurologist','Diabetologist'
+  ];
+
+  let doctors = [];
+  try {
+    const res = await apiFetch(`/hospitals/${hid}/doctors`);
+    doctors = res.doctors || [];
+  } catch(e) { /* will show empty state */ }
+
+  const specOptions = SPECIALITIES.map(s => `<option>${s}</option>`).join('');
+
+  const doctorRows = doctors.length
+    ? doctors.map(d => `
+      <tr id="dr-row-${d.id}">
+        <td>
+          <div style="font-weight:500">${d.name}</div>
+          <div style="font-size:10.5px;color:var(--text3)">${d.speciality}</div>
+        </td>
+        <td style="font-size:11px;color:var(--text3)">${d.available_from && d.available_to ? d.available_from+' – '+d.available_to : '—'}</td>
+        <td>
+          <span class="badge ${d.available ? 'b-green' : 'b-red'}" id="dr-badge-${d.id}">
+            ${d.available ? '🟢 Available' : '🔴 Off Duty'}
+          </span>
+        </td>
+        <td style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm" onclick="toggleDoctor(${hid},${d.id})">
+            ${d.available ? 'Mark Off Duty' : 'Mark Available'}
+          </button>
+          <button class="btn btn-sm" style="background:var(--danger-light);color:var(--danger);border:1px solid #fca5a5" onclick="deleteDoctor(${hid},${d.id},'${d.name.replace(/'/g,"\\'")}')">Remove</button>
+        </td>
+      </tr>`).join('')
+    : `<tr><td colspan="4" style="color:var(--text3);text-align:center;padding:20px">No doctors added yet</td></tr>`;
+
+  return `
+<div class="card">
+  <div class="card-header" style="margin-bottom:16px">
+    <div class="card-title">👨‍⚕️ Doctor Availability</div>
+    <span class="badge b-blue">${doctors.filter(d=>d.available).length} on duty</span>
+  </div>
+  <table class="tbl">
+    <thead>
+      <tr>
+        <th>Doctor</th>
+        <th>Shift</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="doctors-tbody">${doctorRows}</tbody>
+  </table>
+</div>
+
+<div class="card">
+  <div class="card-title" style="margin-bottom:14px">➕ Add Doctor</div>
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label">Full Name *</label>
+      <input class="form-input" id="doc-name" placeholder="e.g. Dr. Ramesh Kumar" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Speciality *</label>
+      <select class="form-select" id="doc-spec">
+        <option value="">Select speciality</option>
+        ${specOptions}
+      </select>
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label">Shift From</label>
+      <input class="form-input" id="doc-from" type="time" value="09:00" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Shift To</label>
+      <input class="form-input" id="doc-to" type="time" value="17:00" />
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <button class="btn btn-teal" onclick="addDoctor(${hid})">Add Doctor</button>
+    <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer">
+      <input type="checkbox" id="doc-avail" checked style="accent-color:var(--primary)"> Currently available
+    </label>
+  </div>
+</div>`;
+}
+
+async function addDoctor(hid) {
+  const name        = document.getElementById('doc-name')?.value?.trim();
+  const speciality  = document.getElementById('doc-spec')?.value;
+  const available_from = document.getElementById('doc-from')?.value;
+  const available_to   = document.getElementById('doc-to')?.value;
+  const available   = document.getElementById('doc-avail')?.checked ?? true;
+
+  if (!name)       { toast('❌ Enter doctor name'); return; }
+  if (!speciality) { toast('❌ Select a speciality'); return; }
+
+  try {
+    await apiFetch(`/hospitals/${hid}/doctors`, {
+      method: 'POST',
+      body: { name, speciality, available, available_from, available_to }
+    });
+    toast(`✅ Dr. ${name} added`);
+    // Reload the tab
+    const tabIdx = id => tabsForRole[currentRole].findIndex(t => t.id === id);
+    await renderTab(tabIdx('doctors'));
+  } catch(e) { toast('❌ ' + e.message); }
+}
+
+async function toggleDoctor(hid, did) {
+  try {
+    const res = await apiFetch(`/hospitals/${hid}/doctors/${did}/toggle`, { method: 'PATCH' });
+    toast(`✅ ${res.message}`);
+    // Update badge & button in-place
+    const badge = document.getElementById(`dr-badge-${did}`);
+    const row   = document.getElementById(`dr-row-${did}`);
+    if (badge) {
+      badge.className = `badge ${res.available ? 'b-green' : 'b-red'}`;
+      badge.textContent = res.available ? '🟢 Available' : '🔴 Off Duty';
+    }
+    if (row) {
+      const btn = row.querySelector('.btn-outline');
+      if (btn) btn.textContent = res.available ? 'Mark Off Duty' : 'Mark Available';
+    }
+  } catch(e) { toast('❌ ' + e.message); }
+}
+
+async function deleteDoctor(hid, did, name) {
+  if (!confirm(`Remove Dr. ${name}?`)) return;
+  try {
+    await apiFetch(`/hospitals/${hid}/doctors/${did}`, { method: 'DELETE' });
+    toast(`✅ ${name} removed`);
+    const row = document.getElementById(`dr-row-${did}`);
+    if (row) row.remove();
+  } catch(e) { toast('❌ ' + e.message); }
+}

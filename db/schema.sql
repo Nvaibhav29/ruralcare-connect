@@ -185,3 +185,15 @@ CREATE TABLE IF NOT EXISTS bed_reservations (
   reserved_at      TIMESTAMPTZ DEFAULT NOW(),
   confirmed_at     TIMESTAMPTZ
 );
+
+CREATE TABLE IF NOT EXISTS hospital_doctors (
+  id             SERIAL PRIMARY KEY,
+  hospital_id    INTEGER NOT NULL REFERENCES hospitals(id),
+  name           TEXT NOT NULL,
+  speciality     TEXT NOT NULL,
+  available      BOOLEAN DEFAULT true,
+  available_from TEXT,
+  available_to   TEXT,
+  updated_at     TIMESTAMPTZ DEFAULT NOW()
+);
+
